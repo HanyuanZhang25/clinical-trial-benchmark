@@ -1,0 +1,12 @@
+{
+  "benchmark_version": "25/02 Benchmark",
+  "instructions": "Published historical benchmark. Download is retained for reference only.",
+  "questions": [
+    { "problem_id": "problem_000001", "prompt": "Classify superiority outcome for trial pair A." },
+    { "problem_id": "problem_000002", "prompt": "Classify superiority outcome for trial pair B." },
+    { "problem_id": "problem_000003", "prompt": "Classify non-inferiority outcome for trial pair C." },
+    { "problem_id": "problem_000004", "prompt": "Classify non-inferiority outcome for trial pair D." },
+    { "problem_id": "problem_000005", "prompt": "Predict endpoint for trial E." },
+    { "problem_id": "problem_000006", "prompt": "Predict endpoint for trial F." }
+  ]
+}

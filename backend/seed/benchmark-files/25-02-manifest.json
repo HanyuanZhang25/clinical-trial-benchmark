@@ -1,0 +1,8 @@
+[
+  { "problem_id": 1, "title": "Arm2Arm superiority", "section": "arm2arm_superiority" },
+  { "problem_id": 2, "title": "Arm2Arm superiority", "section": "arm2arm_superiority" },
+  { "problem_id": 3, "title": "Arm2Arm non-inferiority", "section": "arm2arm_noninferiority" },
+  { "problem_id": 4, "title": "Arm2Arm non-inferiority", "section": "arm2arm_noninferiority" },
+  { "problem_id": 5, "title": "Endpoint prediction", "section": "endpoint_prediction" },
+  { "problem_id": 6, "title": "Endpoint prediction", "section": "endpoint_prediction" }
+]

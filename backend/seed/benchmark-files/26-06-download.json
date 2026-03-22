@@ -1,0 +1,12 @@
+{
+  "benchmark_version": "26/06 Benchmark",
+  "instructions": "Use this placeholder development bundle to validate the submission flow.",
+  "questions": [
+    { "problem_id": 201, "prompt": "Classify superiority outcome for trial pair M." },
+    { "problem_id": 202, "prompt": "Classify superiority outcome for trial pair N." },
+    { "problem_id": 203, "prompt": "Classify non-inferiority outcome for trial pair O." },
+    { "problem_id": 204, "prompt": "Classify non-inferiority outcome for trial pair P." },
+    { "problem_id": 205, "prompt": "Predict endpoint for trial Q." },
+    { "problem_id": 206, "prompt": "Predict endpoint for trial R." }
+  ]
+}

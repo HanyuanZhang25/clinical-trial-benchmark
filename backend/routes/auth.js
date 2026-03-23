@@ -110,7 +110,7 @@ router.post(
   '/signin',
   rateLimit({
     key: 'signin',
-    limit: 10,
+    limit: 50,
     windowMs: 15 * 60 * 1000,
     message: 'Too many sign-in attempts. Please try again later.'
   }),

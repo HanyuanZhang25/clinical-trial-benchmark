@@ -2,7 +2,9 @@
 .gitignore
 node_modules
 backend/node_modules
-frontend
+frontend/node_modules
+frontend/dist
+backend/.env
 *.docx
 *.pdf
 *.png

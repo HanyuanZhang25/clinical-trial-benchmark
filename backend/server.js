@@ -16,21 +16,29 @@ app.use(express.json({ limit: '5mb' }));
 
 const adminUsername = process.env.ADMIN_USERNAME || 'admin';
 const adminEmail = process.env.ADMIN_EMAIL || 'admin@clinicaltrialarena.dev';
+const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get(adminUsername);
+const hashedAdminPassword = bcrypt.hashSync(adminPassword, 12);
 
 if (!adminUser) {
-  const hashedPassword = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 12);
   db.prepare(`
     INSERT INTO users (username, password, email, full_name, affiliation, role, email_verified)
     VALUES (?, ?, ?, ?, ?, 'admin', 1)
   `).run(
     adminUsername,
-    hashedPassword,
+    hashedAdminPassword,
     adminEmail,
     'Clinical Trial Arena Admin',
     'Clinical Trial Arena'
   );
-  console.log('Default admin user created');
+  console.log('Admin user created from environment configuration');
+} else {
+  db.prepare(`
+    UPDATE users
+    SET email = ?, password = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(adminEmail, hashedAdminPassword, adminUser.id);
+  console.log('Admin user synchronized from environment configuration');
 }
 
 app.use('/api/auth', require('./routes/auth'));

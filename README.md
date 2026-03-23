@@ -100,21 +100,22 @@ Open the frontend URL shown in the terminal, for example:
 http://localhost:5173
 ```
 
-## Default Admin Account
+## Admin Configuration
 
-Configured in [backend/.env](/mnt/d/1_study/research/clinical-trial-benchmark/backend/.env):
-
-- Username: `admin`
-- Password: `admin123`
+Admin credentials are configured through environment variables.
+For local development, copy values from [backend/.env.example](/mnt/d/1_study/research/clinical-trial-benchmark/backend/.env.example) into a local `backend/.env`.
+For Cloud Run, set real values in the `Variables & Secrets` section of the service configuration.
 
 ## Environment Variables
 
 Current backend environment variables:
 
 - `PORT=3001`
-- `JWT_SECRET=...`
+- `NODE_ENV=production`
+- `JWT_SECRET=replace_me`
 - `ADMIN_USERNAME=admin`
-- `ADMIN_PASSWORD=admin123`
+- `ADMIN_PASSWORD=replace_me`
+- `ADMIN_EMAIL=admin@example.com`
 
 ## Available Pages
 
@@ -215,4 +216,3 @@ For a more production-oriented future setup, the next step would be:
 - Cloud SQL
 - Secret Manager
 - Cloud Build
-

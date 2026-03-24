@@ -35,15 +35,14 @@ function normalizeEmail(value = '') {
 }
 
 async function createVerification(user) {
-  db.prepare('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL')
-    .run(user.id);
+  await db.run('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL', [user.id]);
 
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  db.prepare(`
+  await db.run(`
     INSERT INTO email_verifications (user_id, code, purpose, expires_at)
     VALUES (?, ?, 'signup', ?)
-  `).run(user.id, code, expiresAt);
+  `, [user.id, code, expiresAt]);
 
   await sendVerificationCode({
     email: user.email,
@@ -85,11 +84,11 @@ router.post(
       });
     }
 
-    const existing = db.prepare(`
+    const existing = await db.get(`
       SELECT id
       FROM users
       WHERE lower(trim(username)) = ? OR lower(trim(email)) = ?
-    `).get(normalizedUsername, normalizedEmail);
+    `, [normalizedUsername, normalizedEmail]);
     if (existing) {
       return res.status(409).json({
         success: false,
@@ -99,20 +98,20 @@ router.post(
     }
 
     const hashedPassword = bcrypt.hashSync(password, 12);
-    const result = db.prepare(`
+    const result = await db.insert(`
       INSERT INTO users (username, password, email, full_name, affiliation, role, email_verified)
       VALUES (?, ?, ?, ?, ?, 'user', 0)
-    `).run(normalizedUsername, hashedPassword, normalizedEmail, normalizedFullName, normalizedAffiliation);
+    `, [normalizedUsername, hashedPassword, normalizedEmail, normalizedFullName, normalizedAffiliation]);
 
-    const user = db.prepare(`
+    const user = await db.get(`
       SELECT id, username, email, full_name, affiliation, role, email_verified, created_at
       FROM users WHERE id = ?
-    `).get(result.lastInsertRowid);
+    `, [result.lastInsertRowid]);
 
     try {
       await createVerification(user);
     } catch (error) {
-      db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+      await db.run('DELETE FROM users WHERE id = ?', [user.id]);
       return res.status(502).json({
         success: false,
         error_code: 'EMAIL_DELIVERY_FAILED',
@@ -120,8 +119,8 @@ router.post(
       });
     }
     attachSession(res, user);
-    logAuthEvent({ userId: user.id, eventType: 'signup', success: true, ipAddress: getIpAddress(req) });
-    logAudit({ userId: user.id, action: 'signup', entityType: 'user', entityId: String(user.id) });
+    await logAuthEvent({ userId: user.id, eventType: 'signup', success: true, ipAddress: getIpAddress(req) });
+    await logAudit({ userId: user.id, action: 'signup', entityType: 'user', entityId: String(user.id) });
 
     res.status(201).json({
       success: true,
@@ -139,7 +138,7 @@ router.post(
     windowMs: 15 * 60 * 1000,
     message: 'Too many sign-in attempts. Please try again later.'
   }),
-  (req, res) => {
+  async (req, res) => {
     const { username, password } = req.body;
     const loginIdentifier = username?.trim().toLowerCase();
 
@@ -151,14 +150,14 @@ router.post(
       });
     }
 
-    const user = db.prepare(`
+    const user = await db.get(`
       SELECT id, username, email, password, full_name, affiliation, role, email_verified, created_at
       FROM users
       WHERE lower(trim(username)) = ? OR lower(trim(email)) = ?
-    `).get(loginIdentifier, loginIdentifier);
+    `, [loginIdentifier, loginIdentifier]);
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
-      logAuthEvent({
+      await logAuthEvent({
         userId: user?.id || null,
         eventType: 'signin',
         success: false,
@@ -173,8 +172,8 @@ router.post(
     }
 
     attachSession(res, user);
-    logAuthEvent({ userId: user.id, eventType: 'signin', success: true, ipAddress: getIpAddress(req) });
-    logAudit({ userId: user.id, action: 'signin', entityType: 'user', entityId: String(user.id) });
+    await logAuthEvent({ userId: user.id, eventType: 'signin', success: true, ipAddress: getIpAddress(req) });
+    await logAudit({ userId: user.id, action: 'signin', entityType: 'user', entityId: String(user.id) });
 
     res.json({
       success: true,
@@ -188,7 +187,7 @@ router.post('/logout', (req, res) => {
   res.json({ success: true, message: 'Signed out.' });
 });
 
-router.post('/verify-email', authenticateToken, (req, res) => {
+router.post('/verify-email', authenticateToken, async (req, res) => {
   const { code } = req.body;
 
   if (!code) {
@@ -199,15 +198,15 @@ router.post('/verify-email', authenticateToken, (req, res) => {
     });
   }
 
-  const verification = db.prepare(`
+  const verification = await db.get(`
     SELECT * FROM email_verifications
     WHERE user_id = ? AND code = ? AND used_at IS NULL
     ORDER BY created_at DESC
     LIMIT 1
-  `).get(req.user.id, code);
+  `, [req.user.id, code]);
 
   if (!verification) {
-    logAuthEvent({ userId: req.user.id, eventType: 'verify_email', success: false, ipAddress: getIpAddress(req) });
+    await logAuthEvent({ userId: req.user.id, eventType: 'verify_email', success: false, ipAddress: getIpAddress(req) });
     return res.status(400).json({
       success: false,
       error_code: 'INVALID_CODE',
@@ -223,17 +222,17 @@ router.post('/verify-email', authenticateToken, (req, res) => {
     });
   }
 
-  db.prepare('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE id = ?').run(verification.id);
-  db.prepare('UPDATE users SET email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.user.id);
+  await db.run('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE id = ?', [verification.id]);
+  await db.run('UPDATE users SET email_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [req.user.id]);
 
-  const updatedUser = db.prepare(`
+  const updatedUser = await db.get(`
     SELECT id, username, email, full_name, affiliation, role, email_verified, created_at
     FROM users WHERE id = ?
-  `).get(req.user.id);
+  `, [req.user.id]);
 
   attachSession(res, updatedUser);
-  logAuthEvent({ userId: req.user.id, eventType: 'verify_email', success: true, ipAddress: getIpAddress(req) });
-  logAudit({ userId: req.user.id, action: 'verify_email', entityType: 'user', entityId: String(req.user.id) });
+  await logAuthEvent({ userId: req.user.id, eventType: 'verify_email', success: true, ipAddress: getIpAddress(req) });
+  await logAudit({ userId: req.user.id, action: 'verify_email', entityType: 'user', entityId: String(req.user.id) });
 
   res.json({
     success: true,
@@ -269,8 +268,8 @@ router.post(
       });
     }
 
-    logAuthEvent({ userId: req.user.id, eventType: 'resend_verification', success: true, ipAddress: getIpAddress(req) });
-    logAudit({ userId: req.user.id, action: 'resend_verification', entityType: 'user', entityId: String(req.user.id) });
+    await logAuthEvent({ userId: req.user.id, eventType: 'resend_verification', success: true, ipAddress: getIpAddress(req) });
+    await logAudit({ userId: req.user.id, action: 'resend_verification', entityType: 'user', entityId: String(req.user.id) });
 
     res.json({
       success: true,

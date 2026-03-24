@@ -1,7 +1,7 @@
 const db = require('../database');
 const { readSessionToken, verifySession } = require('../lib/security');
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
   const token = readSessionToken(req);
 
   if (!token) {
@@ -14,10 +14,10 @@ function authenticateToken(req, res, next) {
 
   try {
     const session = verifySession(token);
-    const user = db.prepare(`
+    const user = await db.get(`
       SELECT id, username, email, full_name, affiliation, role, email_verified, created_at
       FROM users WHERE id = ?
-    `).get(session.id);
+    `, [session.id]);
 
     if (!user) {
       return res.status(401).json({

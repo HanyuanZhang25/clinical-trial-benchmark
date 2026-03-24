@@ -5,7 +5,7 @@ const { logAudit } = require('../services/audit');
 
 const router = express.Router();
 
-router.post('/', authenticateToken, requireVerifiedEmail, (req, res) => {
+router.post('/', authenticateToken, requireVerifiedEmail, async (req, res) => {
   try {
     const { payload } = req.body;
     if (!payload) {
@@ -16,12 +16,12 @@ router.post('/', authenticateToken, requireVerifiedEmail, (req, res) => {
       });
     }
 
-    const submission = createSubmission({
+    const submission = await createSubmission({
       user: req.user,
       payload
     });
 
-    logAudit({
+    await logAudit({
       userId: req.user.id,
       action: 'submit_benchmark',
       entityType: 'submission',
@@ -35,7 +35,7 @@ router.post('/', authenticateToken, requireVerifiedEmail, (req, res) => {
       message: 'Submission received. Results are pending until the benchmark is published.'
     });
   } catch (error) {
-    logAudit({
+    await logAudit({
       userId: req.user.id,
       action: 'submission_validation_failed',
       entityType: 'submission',
@@ -50,16 +50,16 @@ router.post('/', authenticateToken, requireVerifiedEmail, (req, res) => {
   }
 });
 
-router.get('/my', authenticateToken, (req, res) => {
+router.get('/my', authenticateToken, async (req, res) => {
   res.json({
     success: true,
-    submissions: listUserSubmissions(req.user.id)
+    submissions: await listUserSubmissions(req.user.id)
   });
 });
 
-router.get('/:id', authenticateToken, (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const submission = getSubmissionDetail(req.params.id, req.user);
+    const submission = await getSubmissionDetail(req.params.id, req.user);
     res.json({ success: true, submission });
   } catch (error) {
     res.status(error.status || 400).json({

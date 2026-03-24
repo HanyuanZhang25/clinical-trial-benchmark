@@ -1,168 +1,183 @@
-const Database = require('better-sqlite3');
 const path = require('path');
+const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 
 const dataDir = path.join(__dirname, 'data');
 const filesDir = path.join(__dirname, 'seed', 'benchmark-files');
 const primaryDbPath = path.join(dataDir, 'benchmark.db');
 const fallbackDbPath = path.join('/tmp', 'clinical-trial-arena.db');
+const databaseUrl = process.env.DATABASE_URL;
+const runningOnCloudRun = !!process.env.K_SERVICE;
+const driver = databaseUrl ? 'postgres' : 'sqlite';
 
-function openDatabase() {
+if (runningOnCloudRun && !databaseUrl) {
+  throw new Error('DATABASE_URL is required when running on Cloud Run. Configure Cloud SQL/PostgreSQL to persist user data.');
+}
+
+let sqliteDb = null;
+let usingFallback = false;
+let pool = null;
+let initPromise = null;
+
+function toPgParams(sql) {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+function openSqliteDatabase() {
   try {
-    return {
-      db: new Database(primaryDbPath),
-      dbPath: primaryDbPath,
-      usingFallback: false
-    };
+    sqliteDb = new Database(primaryDbPath);
+    usingFallback = false;
   } catch (error) {
     console.warn(`[database] Primary database open failed, falling back to ${fallbackDbPath}: ${error.message}`);
-    return {
-      db: new Database(fallbackDbPath),
-      dbPath: fallbackDbPath,
-      usingFallback: true
-    };
+    sqliteDb = new Database(fallbackDbPath);
+    usingFallback = true;
+  }
+
+  try {
+    sqliteDb.pragma('journal_mode = WAL');
+  } catch (error) {
+    console.warn(`[database] WAL mode unavailable, continuing with default journal mode: ${error.message}`);
+  }
+
+  try {
+    sqliteDb.pragma('foreign_keys = ON');
+  } catch (error) {
+    console.warn(`[database] Could not enable foreign_keys pragma: ${error.message}`);
   }
 }
 
-const dbState = openDatabase();
-let db = dbState.db;
-let usingFallback = dbState.usingFallback;
-
-try {
-  db.pragma('journal_mode = WAL');
-} catch (error) {
-  console.warn(`[database] WAL mode unavailable, continuing with default journal mode: ${error.message}`);
-}
-
-try {
-  db.pragma('foreign_keys = ON');
-} catch (error) {
-  console.warn(`[database] Could not enable foreign_keys pragma: ${error.message}`);
-}
-
 function hasTable(name) {
-  return !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name);
+  return !!sqliteDb.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name);
 }
 
 function getColumnNames(tableName) {
   if (!hasTable(tableName)) return [];
-  return db.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
+  return sqliteDb.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
 }
 
-function ensureColumn(tableName, columnName, definition) {
+function ensureSqliteColumn(tableName, columnName, definition) {
   const columns = getColumnNames(tableName);
   if (!columns.includes(columnName)) {
-    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+    sqliteDb.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
   }
 }
 
-function initializeSchema() {
-  db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    full_name TEXT NOT NULL,
-    affiliation TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user',
-    email_verified INTEGER NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+function initializeSqliteSchema() {
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      affiliation TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user',
+      email_verified INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
 
-  CREATE TABLE IF NOT EXISTS email_verifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    code TEXT NOT NULL,
-    purpose TEXT NOT NULL DEFAULT 'signup',
-    expires_at DATETIME NOT NULL,
-    used_at DATETIME,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      code TEXT NOT NULL,
+      purpose TEXT NOT NULL DEFAULT 'signup',
+      expires_at DATETIME NOT NULL,
+      used_at DATETIME,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
 
-  CREATE TABLE IF NOT EXISTS auth_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    event_type TEXT NOT NULL,
-    success INTEGER NOT NULL,
-    ip_address TEXT,
-    metadata TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-  );
+    CREATE TABLE IF NOT EXISTS auth_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      event_type TEXT NOT NULL,
+      success INTEGER NOT NULL,
+      ip_address TEXT,
+      metadata TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
 
-  CREATE TABLE IF NOT EXISTS benchmarks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug TEXT UNIQUE NOT NULL,
-    display_name TEXT NOT NULL,
-    benchmark_cycle_label TEXT NOT NULL,
-    state TEXT NOT NULL,
-    submission_open_at DATETIME,
-    submission_close_at DATETIME,
-    result_publish_at DATETIME,
-    download_file_path TEXT,
-    manifest_file_path TEXT NOT NULL,
-    has_ground_truth INTEGER NOT NULL DEFAULT 0,
-    description TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+    CREATE TABLE IF NOT EXISTS benchmarks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      display_name TEXT NOT NULL,
+      benchmark_cycle_label TEXT NOT NULL,
+      state TEXT NOT NULL,
+      submission_open_at DATETIME,
+      submission_close_at DATETIME,
+      result_publish_at DATETIME,
+      download_file_path TEXT,
+      manifest_file_path TEXT NOT NULL,
+      has_ground_truth INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
 
-  CREATE TABLE IF NOT EXISTS submissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    benchmark_id INTEGER NOT NULL,
-    model_name TEXT NOT NULL,
-    benchmark_version TEXT NOT NULL,
-    raw_payload TEXT NOT NULL,
-    total_cost REAL NOT NULL,
-    status TEXT NOT NULL,
-    validation_summary TEXT,
-    submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      benchmark_id INTEGER NOT NULL,
+      model_name TEXT NOT NULL,
+      benchmark_version TEXT NOT NULL,
+      raw_payload TEXT NOT NULL,
+      total_cost REAL NOT NULL,
+      status TEXT NOT NULL,
+      validation_summary TEXT,
+      submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE
+    );
 
-  CREATE TABLE IF NOT EXISTS submission_evaluations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    submission_id INTEGER,
-    benchmark_id INTEGER NOT NULL,
-    display_username TEXT NOT NULL,
-    model_name TEXT NOT NULL,
-    average_f1_macro REAL,
-    average_cross_entropy REAL,
-    cost REAL,
-    arm2arm_superiority_f1 REAL,
-    arm2arm_superiority_cross_entropy REAL,
-    arm2arm_noninferiority_f1 REAL,
-    arm2arm_noninferiority_cross_entropy REAL,
-    endpoint_prediction_f1 REAL,
-    endpoint_prediction_cross_entropy REAL,
-    status TEXT NOT NULL DEFAULT 'pending_results',
-    is_public INTEGER NOT NULL DEFAULT 0,
-    published_at DATETIME,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
-    FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE
-  );
+    CREATE TABLE IF NOT EXISTS submission_evaluations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      submission_id INTEGER,
+      benchmark_id INTEGER NOT NULL,
+      display_username TEXT NOT NULL,
+      model_name TEXT NOT NULL,
+      average_f1_macro REAL,
+      average_cross_entropy REAL,
+      cost REAL,
+      arm2arm_superiority_f1 REAL,
+      arm2arm_superiority_cross_entropy REAL,
+      arm2arm_noninferiority_f1 REAL,
+      arm2arm_noninferiority_cross_entropy REAL,
+      endpoint_prediction_f1 REAL,
+      endpoint_prediction_cross_entropy REAL,
+      status TEXT NOT NULL DEFAULT 'pending_results',
+      is_public INTEGER NOT NULL DEFAULT 0,
+      published_at DATETIME,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+      FOREIGN KEY (benchmark_id) REFERENCES benchmarks(id) ON DELETE CASCADE
+    );
 
-  CREATE TABLE IF NOT EXISTS audit_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    action TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id TEXT,
-    metadata TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-  );
-`);
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT,
+      metadata TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+  `);
 
-  ensureColumn('users', 'full_name', "TEXT DEFAULT ''");
-  ensureColumn('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 0');
-  ensureColumn('users', 'updated_at', 'DATETIME');
+  ensureSqliteColumn('users', 'full_name', "TEXT DEFAULT ''");
+  ensureSqliteColumn('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 0');
+  ensureSqliteColumn('users', 'updated_at', 'DATETIME');
+  ensureSqliteColumn('submissions', 'benchmark_id', 'INTEGER');
+  ensureSqliteColumn('submissions', 'model_name', 'TEXT');
+  ensureSqliteColumn('submissions', 'benchmark_version', 'TEXT');
+  ensureSqliteColumn('submissions', 'raw_payload', 'TEXT');
+  ensureSqliteColumn('submissions', 'total_cost', 'REAL DEFAULT 0');
+  ensureSqliteColumn('submissions', 'status', "TEXT DEFAULT 'pending_results'");
+  ensureSqliteColumn('submissions', 'validation_summary', 'TEXT');
 
-  db.exec(`
+  sqliteDb.exec(`
     UPDATE users
     SET
       username = lower(trim(username)),
@@ -172,20 +187,7 @@ function initializeSchema() {
       updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)
   `);
 
-  db.exec(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized ON users(lower(trim(username)));
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized ON users(lower(trim(email)));
-  `);
-
-  ensureColumn('submissions', 'benchmark_id', 'INTEGER');
-  ensureColumn('submissions', 'model_name', 'TEXT');
-  ensureColumn('submissions', 'benchmark_version', 'TEXT');
-  ensureColumn('submissions', 'raw_payload', 'TEXT');
-  ensureColumn('submissions', 'total_cost', 'REAL DEFAULT 0');
-  ensureColumn('submissions', 'status', "TEXT DEFAULT 'pending_results'");
-  ensureColumn('submissions', 'validation_summary', 'TEXT');
-
-  db.exec(`
+  sqliteDb.exec(`
     UPDATE submissions
     SET
       model_name = COALESCE(model_name, submission_name, 'Legacy Submission'),
@@ -194,28 +196,113 @@ function initializeSchema() {
       status = COALESCE(status, CASE WHEN score IS NULL THEN 'pending_results' ELSE 'published' END),
       total_cost = COALESCE(total_cost, 0)
   `);
+
+  sqliteDb.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized ON users(lower(trim(username)));
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized ON users(lower(trim(email)));
+  `);
 }
 
-try {
-  initializeSchema();
-} catch (error) {
-  if (usingFallback) {
-    throw error;
-  }
+async function initializePostgresSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      affiliation TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user',
+      email_verified INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
 
-  console.warn(`[database] Primary database initialization failed, retrying with ${fallbackDbPath}: ${error.message}`);
-  db.close();
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code TEXT NOT NULL,
+      purpose TEXT NOT NULL DEFAULT 'signup',
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
 
-  const fallbackDb = new Database(fallbackDbPath);
-  try {
-    fallbackDb.pragma('journal_mode = WAL');
-  } catch {}
-  try {
-    fallbackDb.pragma('foreign_keys = ON');
-  } catch {}
-  db = fallbackDb;
-  usingFallback = true;
-  initializeSchema();
+    CREATE TABLE IF NOT EXISTS auth_events (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      event_type TEXT NOT NULL,
+      success INTEGER NOT NULL,
+      ip_address TEXT,
+      metadata TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS benchmarks (
+      id SERIAL PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      display_name TEXT NOT NULL,
+      benchmark_cycle_label TEXT NOT NULL,
+      state TEXT NOT NULL,
+      submission_open_at TIMESTAMPTZ,
+      submission_close_at TIMESTAMPTZ,
+      result_publish_at TIMESTAMPTZ,
+      download_file_path TEXT,
+      manifest_file_path TEXT NOT NULL,
+      has_ground_truth INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS submissions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      benchmark_id INTEGER NOT NULL REFERENCES benchmarks(id) ON DELETE CASCADE,
+      model_name TEXT NOT NULL,
+      benchmark_version TEXT NOT NULL,
+      raw_payload TEXT NOT NULL,
+      total_cost DOUBLE PRECISION NOT NULL,
+      status TEXT NOT NULL,
+      validation_summary TEXT,
+      submitted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS submission_evaluations (
+      id SERIAL PRIMARY KEY,
+      submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
+      benchmark_id INTEGER NOT NULL REFERENCES benchmarks(id) ON DELETE CASCADE,
+      display_username TEXT NOT NULL,
+      model_name TEXT NOT NULL,
+      average_f1_macro DOUBLE PRECISION,
+      average_cross_entropy DOUBLE PRECISION,
+      cost DOUBLE PRECISION,
+      arm2arm_superiority_f1 DOUBLE PRECISION,
+      arm2arm_superiority_cross_entropy DOUBLE PRECISION,
+      arm2arm_noninferiority_f1 DOUBLE PRECISION,
+      arm2arm_noninferiority_cross_entropy DOUBLE PRECISION,
+      endpoint_prediction_f1 DOUBLE PRECISION,
+      endpoint_prediction_cross_entropy DOUBLE PRECISION,
+      status TEXT NOT NULL DEFAULT 'pending_results',
+      is_public INTEGER NOT NULL DEFAULT 0,
+      published_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT,
+      metadata TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized ON users((lower(trim(username))));
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized ON users((lower(trim(email))));
+  `);
 }
 
 const benchmarkSeeds = [
@@ -260,41 +347,6 @@ const benchmarkSeeds = [
   }
 ];
 
-const insertBenchmark = db.prepare(`
-  INSERT INTO benchmarks (
-    slug, display_name, benchmark_cycle_label, state, submission_open_at, submission_close_at,
-    result_publish_at, download_file_path, manifest_file_path, has_ground_truth, description
-  ) VALUES (
-    @slug, @display_name, @benchmark_cycle_label, @state, @submission_open_at, @submission_close_at,
-    @result_publish_at, @download_file_path, @manifest_file_path, @has_ground_truth, @description
-  )
-`);
-
-const updateBenchmarkSeed = db.prepare(`
-  UPDATE benchmarks
-  SET
-    display_name = @display_name,
-    benchmark_cycle_label = @benchmark_cycle_label,
-    state = @state,
-    submission_open_at = @submission_open_at,
-    submission_close_at = @submission_close_at,
-    result_publish_at = @result_publish_at,
-    download_file_path = @download_file_path,
-    manifest_file_path = @manifest_file_path,
-    has_ground_truth = @has_ground_truth,
-    description = @description
-  WHERE slug = @slug
-`);
-
-for (const benchmark of benchmarkSeeds) {
-  const existing = db.prepare('SELECT id FROM benchmarks WHERE slug = ?').get(benchmark.slug);
-  if (!existing) {
-    insertBenchmark.run(benchmark);
-  } else {
-    updateBenchmarkSeed.run(benchmark);
-  }
-}
-
 const evaluationSeedRows = [
   {
     benchmark_slug: '25-02',
@@ -330,7 +382,7 @@ const evaluationSeedRows = [
     model_name: 'ArenaLab Hybrid',
     average_f1_macro: 0.854,
     average_cross_entropy: 0.365,
-    cost: 183.50,
+    cost: 183.5,
     arm2arm_superiority_f1: 0.879,
     arm2arm_superiority_cross_entropy: 0.332,
     arm2arm_noninferiority_f1: 0.836,
@@ -344,7 +396,7 @@ const evaluationSeedRows = [
     model_name: 'ClinicReasoner R2',
     average_f1_macro: 0.829,
     average_cross_entropy: 0.402,
-    cost: 120.10,
+    cost: 120.1,
     arm2arm_superiority_f1: 0.845,
     arm2arm_superiority_cross_entropy: 0.377,
     arm2arm_noninferiority_f1: 0.821,
@@ -354,22 +406,69 @@ const evaluationSeedRows = [
   }
 ];
 
-const insertEval = db.prepare(`
-  INSERT INTO submission_evaluations (
-    submission_id, benchmark_id, display_username, model_name, average_f1_macro, average_cross_entropy,
-    cost, arm2arm_superiority_f1, arm2arm_superiority_cross_entropy, arm2arm_noninferiority_f1,
-    arm2arm_noninferiority_cross_entropy, endpoint_prediction_f1, endpoint_prediction_cross_entropy,
-    status, is_public, published_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 1, CURRENT_TIMESTAMP)
-`);
+async function seedBenchmarks() {
+  for (const benchmark of benchmarkSeeds) {
+    const existing = await rawGet('SELECT id FROM benchmarks WHERE slug = ?', [benchmark.slug]);
+    if (!existing) {
+      await rawInsert(`
+        INSERT INTO benchmarks (
+          slug, display_name, benchmark_cycle_label, state, submission_open_at, submission_close_at,
+          result_publish_at, download_file_path, manifest_file_path, has_ground_truth, description
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        benchmark.slug,
+        benchmark.display_name,
+        benchmark.benchmark_cycle_label,
+        benchmark.state,
+        benchmark.submission_open_at,
+        benchmark.submission_close_at,
+        benchmark.result_publish_at,
+        benchmark.download_file_path,
+        benchmark.manifest_file_path,
+        benchmark.has_ground_truth,
+        benchmark.description
+      ]);
+    } else {
+      await rawRun(`
+        UPDATE benchmarks
+        SET display_name = ?, benchmark_cycle_label = ?, state = ?, submission_open_at = ?, submission_close_at = ?,
+            result_publish_at = ?, download_file_path = ?, manifest_file_path = ?, has_ground_truth = ?, description = ?
+        WHERE slug = ?
+      `, [
+        benchmark.display_name,
+        benchmark.benchmark_cycle_label,
+        benchmark.state,
+        benchmark.submission_open_at,
+        benchmark.submission_close_at,
+        benchmark.result_publish_at,
+        benchmark.download_file_path,
+        benchmark.manifest_file_path,
+        benchmark.has_ground_truth,
+        benchmark.description,
+        benchmark.slug
+      ]);
+    }
+  }
+}
 
-for (const row of evaluationSeedRows) {
-  const benchmark = db.prepare('SELECT id FROM benchmarks WHERE slug = ?').get(row.benchmark_slug);
-  const existing = db.prepare(
-    'SELECT id FROM submission_evaluations WHERE benchmark_id = ? AND display_username = ? AND model_name = ?'
-  ).get(benchmark.id, row.display_username, row.model_name);
-  if (!existing) {
-    insertEval.run(
+async function seedEvaluations() {
+  for (const row of evaluationSeedRows) {
+    const benchmark = await rawGet('SELECT id FROM benchmarks WHERE slug = ?', [row.benchmark_slug]);
+    if (!benchmark) continue;
+    const existing = await rawGet(
+      'SELECT id FROM submission_evaluations WHERE benchmark_id = ? AND display_username = ? AND model_name = ?',
+      [benchmark.id, row.display_username, row.model_name]
+    );
+    if (existing) continue;
+
+    await rawInsert(`
+      INSERT INTO submission_evaluations (
+        submission_id, benchmark_id, display_username, model_name, average_f1_macro, average_cross_entropy,
+        cost, arm2arm_superiority_f1, arm2arm_superiority_cross_entropy, arm2arm_noninferiority_f1,
+        arm2arm_noninferiority_cross_entropy, endpoint_prediction_f1, endpoint_prediction_cross_entropy,
+        status, is_public, published_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 1, CURRENT_TIMESTAMP)
+    `, [
       null,
       benchmark.id,
       row.display_username,
@@ -383,8 +482,110 @@ for (const row of evaluationSeedRows) {
       row.arm2arm_noninferiority_cross_entropy,
       row.endpoint_prediction_f1,
       row.endpoint_prediction_cross_entropy
-    );
+    ]);
   }
 }
 
-module.exports = db;
+async function rawGet(sql, params = []) {
+  if (driver === 'postgres') {
+    const result = await pool.query(toPgParams(sql), params);
+    return result.rows[0] || null;
+  }
+  return sqliteDb.prepare(sql).get(...params) || null;
+}
+
+async function rawAll(sql, params = []) {
+  if (driver === 'postgres') {
+    const result = await pool.query(toPgParams(sql), params);
+    return result.rows;
+  }
+  return sqliteDb.prepare(sql).all(...params);
+}
+
+async function rawRun(sql, params = []) {
+  if (driver === 'postgres') {
+    const result = await pool.query(toPgParams(sql), params);
+    return { changes: result.rowCount };
+  }
+  const result = sqliteDb.prepare(sql).run(...params);
+  return { changes: result.changes, lastInsertRowid: result.lastInsertRowid };
+}
+
+async function rawInsert(sql, params = []) {
+  if (driver === 'postgres') {
+    const result = await pool.query(`${toPgParams(sql)} RETURNING id`, params);
+    return { lastInsertRowid: result.rows[0]?.id ?? null, changes: result.rowCount };
+  }
+  const result = sqliteDb.prepare(sql).run(...params);
+  return { changes: result.changes, lastInsertRowid: result.lastInsertRowid };
+}
+
+async function init() {
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    if (driver === 'postgres') {
+      pool = new Pool({
+        connectionString: databaseUrl,
+        ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false }
+      });
+      await initializePostgresSchema();
+    } else {
+      openSqliteDatabase();
+      try {
+        initializeSqliteSchema();
+      } catch (error) {
+        if (usingFallback) throw error;
+        console.warn(`[database] Primary database initialization failed, retrying with ${fallbackDbPath}: ${error.message}`);
+        sqliteDb.close();
+        sqliteDb = new Database(fallbackDbPath);
+        usingFallback = true;
+        initializeSqliteSchema();
+      }
+    }
+
+    await seedBenchmarks();
+    await seedEvaluations();
+  })();
+
+  return initPromise;
+}
+
+async function get(sql, params = []) {
+  await init();
+  return rawGet(sql, params);
+}
+
+async function all(sql, params = []) {
+  await init();
+  return rawAll(sql, params);
+}
+
+async function run(sql, params = []) {
+  await init();
+  return rawRun(sql, params);
+}
+
+async function insert(sql, params = []) {
+  await init();
+  return rawInsert(sql, params);
+}
+
+async function exec(sql) {
+  await init();
+  if (driver === 'postgres') {
+    await pool.query(sql);
+    return;
+  }
+  sqliteDb.exec(sql);
+}
+
+module.exports = {
+  driver,
+  init,
+  get,
+  all,
+  run,
+  insert,
+  exec
+};

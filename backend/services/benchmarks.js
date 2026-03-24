@@ -35,35 +35,34 @@ function serializeBenchmark(row) {
 
 function getBenchmarks() {
   return db
-    .prepare('SELECT * FROM benchmarks ORDER BY submission_open_at ASC')
-    .all()
-    .map(serializeBenchmark);
+    .all('SELECT * FROM benchmarks ORDER BY submission_open_at ASC')
+    .then((rows) => rows.map(serializeBenchmark));
 }
 
-function getCurrentOpenBenchmark() {
-  const rows = db.prepare('SELECT * FROM benchmarks ORDER BY submission_open_at ASC').all();
+async function getCurrentOpenBenchmark() {
+  const rows = await db.all('SELECT * FROM benchmarks ORDER BY submission_open_at ASC');
   const open = rows.map(serializeBenchmark).find((benchmark) => benchmark.is_submission_open);
   if (!open) return null;
-  return db.prepare('SELECT * FROM benchmarks WHERE id = ?').get(open.id);
+  return db.get('SELECT * FROM benchmarks WHERE id = ?', [open.id]);
 }
 
-function getBenchmarkByIdentifier(identifier) {
-  const row = db.prepare('SELECT * FROM benchmarks WHERE slug = ? OR id = ?').get(identifier, identifier);
+async function getBenchmarkByIdentifier(identifier) {
+  const row = await db.get('SELECT * FROM benchmarks WHERE slug = ? OR id = ?', [identifier, identifier]);
   return row ? serializeBenchmark(row) : null;
 }
 
 function getBenchmarkRecord(identifier) {
-  return db.prepare('SELECT * FROM benchmarks WHERE slug = ? OR id = ?').get(identifier, identifier);
+  return db.get('SELECT * FROM benchmarks WHERE slug = ? OR id = ?', [identifier, identifier]);
 }
 
-function getManifestForBenchmark(benchmarkIdOrSlug) {
-  const record = getBenchmarkRecord(benchmarkIdOrSlug);
+async function getManifestForBenchmark(benchmarkIdOrSlug) {
+  const record = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!record) return null;
   return readJson(record.manifest_file_path);
 }
 
-function getDownloadPayload(benchmarkIdOrSlug) {
-  const record = getBenchmarkRecord(benchmarkIdOrSlug);
+async function getDownloadPayload(benchmarkIdOrSlug) {
+  const record = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!record || !record.download_file_path) return null;
   return {
     benchmark: serializeBenchmark(record),
@@ -71,11 +70,11 @@ function getDownloadPayload(benchmarkIdOrSlug) {
   };
 }
 
-function getLeaderboard(benchmarkIdOrSlug) {
-  const benchmark = getBenchmarkRecord(benchmarkIdOrSlug);
+async function getLeaderboard(benchmarkIdOrSlug) {
+  const benchmark = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!benchmark) return null;
 
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT display_username, model_name, average_f1_macro, average_cross_entropy, cost,
       arm2arm_superiority_f1, arm2arm_superiority_cross_entropy,
       arm2arm_noninferiority_f1, arm2arm_noninferiority_cross_entropy,
@@ -84,7 +83,7 @@ function getLeaderboard(benchmarkIdOrSlug) {
     FROM submission_evaluations
     WHERE benchmark_id = ? AND is_public = 1 AND status = 'published'
     ORDER BY average_f1_macro DESC, average_cross_entropy ASC, created_at ASC
-  `).all(benchmark.id);
+  `, [benchmark.id]);
 
   return rows.map((row, index) => ({
     rank: index + 1,

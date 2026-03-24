@@ -4,13 +4,13 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/stats', authenticateToken, requireAdmin, (req, res) => {
-  const users = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
-  const benchmarks = db.prepare('SELECT COUNT(*) AS count FROM benchmarks').get().count;
-  const submissions = db.prepare('SELECT COUNT(*) AS count FROM submissions').get().count;
-  const pendingEvaluations = db.prepare(
+router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
+  const users = (await db.get('SELECT COUNT(*) AS count FROM users')).count;
+  const benchmarks = (await db.get('SELECT COUNT(*) AS count FROM benchmarks')).count;
+  const submissions = (await db.get('SELECT COUNT(*) AS count FROM submissions')).count;
+  const pendingEvaluations = (await db.get(
     "SELECT COUNT(*) AS count FROM submission_evaluations WHERE status = 'pending_results'"
-  ).get().count;
+  )).count;
 
   res.json({
     success: true,
@@ -18,12 +18,12 @@ router.get('/stats', authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
-router.get('/users', authenticateToken, requireAdmin, (req, res) => {
-  const users = db.prepare(`
+router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
+  const users = await db.all(`
     SELECT id, username, email, full_name, affiliation, role, email_verified, created_at
     FROM users
     ORDER BY created_at DESC
-  `).all();
+  `);
 
   res.json({ success: true, users });
 });

@@ -8,7 +8,7 @@ function validationError(errorCode, message, status = 400) {
   return error;
 }
 
-function validateSubmissionPayload({ benchmark, payload }) {
+async function validateSubmissionPayload({ benchmark, payload }) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw validationError('INVALID_SCHEMA', 'Submission payload must be a JSON object.');
   }
@@ -29,7 +29,7 @@ function validateSubmissionPayload({ benchmark, payload }) {
     throw validationError('INVALID_SEMANTIC', 'total_cost must be greater than or equal to 0.');
   }
 
-  const manifest = getManifestForBenchmark(benchmark.id);
+  const manifest = await getManifestForBenchmark(benchmark.id);
   const validIds = new Set(manifest.map((item) => Number(item.problem_id)));
   const seen = new Set();
 
@@ -76,8 +76,8 @@ function validateSubmissionPayload({ benchmark, payload }) {
   };
 }
 
-function createSubmission({ user, payload }) {
-  const benchmark = getCurrentOpenBenchmark();
+async function createSubmission({ user, payload }) {
+  const benchmark = await getCurrentOpenBenchmark();
   if (!benchmark) {
     throw validationError('BENCHMARK_CLOSED', 'There is no open benchmark accepting submissions right now.', 409);
   }
@@ -87,16 +87,14 @@ function createSubmission({ user, payload }) {
     throw validationError('BENCHMARK_CLOSED', 'Only open benchmarks may accept new submissions.', 409);
   }
 
-  const summary = validateSubmissionPayload({ benchmark, payload });
+  const summary = await validateSubmissionPayload({ benchmark, payload });
 
-  const insertSubmission = db.prepare(`
+  const result = await db.insert(`
     INSERT INTO submissions (
       user_id, benchmark_id, model_name, benchmark_version, raw_payload,
       total_cost, status, validation_summary
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const result = insertSubmission.run(
+  `, [
     user.id,
     benchmark.id,
     user.username,
@@ -105,13 +103,13 @@ function createSubmission({ user, payload }) {
     payload.total_cost,
     'pending_results',
     JSON.stringify(summary)
-  );
+  ]);
 
-  db.prepare(`
+  await db.insert(`
     INSERT INTO submission_evaluations (
       submission_id, benchmark_id, display_username, model_name, cost, status, is_public
     ) VALUES (?, ?, ?, ?, ?, 'pending_results', 0)
-  `).run(result.lastInsertRowid, benchmark.id, user.username, user.username, payload.total_cost);
+  `, [result.lastInsertRowid, benchmark.id, user.username, user.username, payload.total_cost]);
 
   return {
     id: result.lastInsertRowid,
@@ -125,8 +123,8 @@ function createSubmission({ user, payload }) {
   };
 }
 
-function listUserSubmissions(userId) {
-  const rows = db.prepare(`
+async function listUserSubmissions(userId) {
+  const rows = await db.all(`
     SELECT s.id, s.model_name, s.benchmark_version, s.total_cost, s.status, s.submitted_at,
       b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy, e.is_public
     FROM submissions s
@@ -134,7 +132,7 @@ function listUserSubmissions(userId) {
     LEFT JOIN submission_evaluations e ON e.submission_id = s.id
     WHERE s.user_id = ?
     ORDER BY s.submitted_at DESC
-  `).all(userId);
+  `, [userId]);
 
   return rows.map((row) => ({
     id: row.id,
@@ -151,8 +149,8 @@ function listUserSubmissions(userId) {
   }));
 }
 
-function getSubmissionDetail(submissionId, user) {
-  const row = db.prepare(`
+async function getSubmissionDetail(submissionId, user) {
+  const row = await db.get(`
     SELECT s.*, b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy,
       e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
       e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
@@ -161,7 +159,7 @@ function getSubmissionDetail(submissionId, user) {
     JOIN benchmarks b ON b.id = s.benchmark_id
     LEFT JOIN submission_evaluations e ON e.submission_id = s.id
     WHERE s.id = ?
-  `).get(submissionId);
+  `, [submissionId]);
 
   if (!row) {
     throw validationError('SUBMISSION_NOT_FOUND', 'Submission not found.', 404);

@@ -149,6 +149,36 @@ async function listUserSubmissions(userId) {
   }));
 }
 
+async function listAllSubmissions() {
+  const rows = await db.all(`
+    SELECT s.id, s.user_id, u.username, u.email, s.model_name, s.benchmark_version, s.total_cost,
+      s.status, s.submitted_at, b.display_name, b.slug, e.average_f1_macro,
+      e.average_cross_entropy, e.is_public
+    FROM submissions s
+    JOIN users u ON u.id = s.user_id
+    JOIN benchmarks b ON b.id = s.benchmark_id
+    LEFT JOIN submission_evaluations e ON e.submission_id = s.id
+    ORDER BY s.submitted_at DESC
+  `);
+
+  return rows.map((row) => ({
+    id: row.id,
+    user_id: row.user_id,
+    username: row.username,
+    email: row.email,
+    model_name: row.model_name,
+    benchmark_name: row.display_name,
+    benchmark_slug: row.slug,
+    benchmark_version: row.benchmark_version,
+    total_cost: row.total_cost,
+    status: row.status,
+    average_f1_macro: row.average_f1_macro,
+    average_cross_entropy: row.average_cross_entropy,
+    results_published: !!row.is_public,
+    submitted_at: row.submitted_at
+  }));
+}
+
 async function getSubmissionDetail(submissionId, user) {
   const row = await db.get(`
     SELECT s.*, b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy,
@@ -199,5 +229,6 @@ module.exports = {
   validateSubmissionPayload,
   createSubmission,
   listUserSubmissions,
+  listAllSubmissions,
   getSubmissionDetail
 };

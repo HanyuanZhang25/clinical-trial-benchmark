@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { listAllSubmissions } = require('../services/submissions');
 
 const router = express.Router();
 
@@ -26,6 +27,11 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
   `);
 
   res.json({ success: true, users });
+});
+
+router.get('/submissions', authenticateToken, requireAdmin, async (req, res) => {
+  const submissions = await listAllSubmissions();
+  res.json({ success: true, submissions });
 });
 
 module.exports = router;

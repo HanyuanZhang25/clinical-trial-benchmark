@@ -4,12 +4,12 @@ const { getBenchmarks, getBenchmarkByIdentifier, getDownloadPayload, getLeaderbo
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({ success: true, benchmarks: getBenchmarks() });
+router.get('/', async (req, res) => {
+  res.json({ success: true, benchmarks: await getBenchmarks() });
 });
 
-router.get('/:id', (req, res) => {
-  const benchmark = getBenchmarkByIdentifier(req.params.id);
+router.get('/:id', async (req, res) => {
+  const benchmark = await getBenchmarkByIdentifier(req.params.id);
   if (!benchmark) {
     return res.status(404).json({
       success: false,
@@ -21,8 +21,8 @@ router.get('/:id', (req, res) => {
   res.json({ success: true, benchmark });
 });
 
-router.get('/:id/leaderboard', (req, res) => {
-  const benchmark = getBenchmarkByIdentifier(req.params.id);
+router.get('/:id/leaderboard', async (req, res) => {
+  const benchmark = await getBenchmarkByIdentifier(req.params.id);
   if (!benchmark) {
     return res.status(404).json({
       success: false,
@@ -42,12 +42,12 @@ router.get('/:id/leaderboard', (req, res) => {
   res.json({
     success: true,
     benchmark,
-    leaderboard: getLeaderboard(req.params.id)
+    leaderboard: await getLeaderboard(req.params.id)
   });
 });
 
-router.get('/:id/download', (req, res) => {
-  const payload = getDownloadPayload(req.params.id);
+router.get('/:id/download', async (req, res) => {
+  const payload = await getDownloadPayload(req.params.id);
   if (!payload) {
     return res.status(404).json({
       success: false,

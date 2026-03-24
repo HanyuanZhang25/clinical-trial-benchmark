@@ -36,7 +36,8 @@ clinical-trial-benchmark/
 
 - Node.js
 - Express
-- SQLite via `better-sqlite3`
+- PostgreSQL via `pg` for production / Cloud Run
+- SQLite via `better-sqlite3` as a local fallback
 - Cookie-based session auth
 
 ## Requirements
@@ -112,6 +113,7 @@ Current backend environment variables:
 
 - `PORT=3001`
 - `NODE_ENV=production`
+- `DATABASE_URL=postgresql://user:password@host:5432/clinical_trial_arena`
 - `JWT_SECRET=replace_me`
 - `ADMIN_USERNAME=admin`
 - `ADMIN_PASSWORD=replace_me`

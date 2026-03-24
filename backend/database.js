@@ -337,7 +337,7 @@ const benchmarkSeeds = [
     display_name: '26/06 Benchmark',
     benchmark_cycle_label: '26/06',
     state: 'open_for_submission',
-    submission_open_at: '2026-02-01T00:00:00Z',
+    submission_open_at: '2026-05-01T00:00:00Z',
     submission_close_at: '2026-05-31T23:59:59Z',
     result_publish_at: '2026-07-20T00:00:00Z',
     download_file_path: path.join(filesDir, '26-06-download.json'),

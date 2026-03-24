@@ -48,4 +48,5 @@ export const api = {
 
   getStats: () => request('/admin/stats'),
   getUsers: () => request('/admin/users'),
+  getAdminSubmissions: () => request('/admin/submissions'),
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../utils/api'
 
 function formatMetric(value) {
@@ -8,6 +8,7 @@ function formatMetric(value) {
 
 function SubmissionDetail() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const [submission, setSubmission] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -23,10 +24,13 @@ function SubmissionDetail() {
   if (error) return <div className="alert alert-error">{error}</div>
   if (!submission) return <div className="alert alert-error">Submission not found.</div>
 
+  const backHref = searchParams.get('from') === 'admin' ? '/admin' : '/my-submissions'
+  const backLabel = searchParams.get('from') === 'admin' ? 'Back to Admin' : 'Back to My Submissions'
+
   return (
     <div className="page-shell">
-      <Link to="/my-submissions" className="btn btn-secondary compact-btn">
-        Back to My Submissions
+      <Link to={backHref} className="btn btn-secondary compact-btn">
+        {backLabel}
       </Link>
 
       <div className="section-header top-gap">

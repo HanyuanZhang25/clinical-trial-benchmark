@@ -22,6 +22,7 @@ function MySubmissions() {
       <div className="section-header">
         <p className="eyebrow">History</p>
         <h1 className="page-title">My submissions</h1>
+        <p>Only the most recent 50 results are shown here.</p>
       </div>
 
       {submissions.length === 0 ? (

@@ -62,16 +62,16 @@ async function getManifestForBenchmark(benchmarkIdOrSlug) {
   return readJson(record.manifest_file_path);
 }
 
-async function getDownloadPayload(benchmarkIdOrSlug) {
+async function getDownloadAsset(benchmarkIdOrSlug) {
   const record = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!record || !record.download_file_path) return null;
   return {
     benchmark: serializeBenchmark(record),
-    file: await readJson(record.download_file_path)
+    filePath: record.download_file_path
   };
 }
 
-async function getAuxiliaryPayload(benchmarkIdOrSlug) {
+async function getAuxiliaryAsset(benchmarkIdOrSlug) {
   const record = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!record) return null;
 
@@ -81,7 +81,7 @@ async function getAuxiliaryPayload(benchmarkIdOrSlug) {
   try {
     return {
       benchmark: serializeBenchmark(record),
-      file: await readJson(auxiliaryPath)
+      filePath: auxiliaryPath
     };
   } catch (error) {
     return null;
@@ -137,7 +137,7 @@ module.exports = {
   getBenchmarkByIdentifier,
   getBenchmarkRecord,
   getManifestForBenchmark,
-  getDownloadPayload,
-  getAuxiliaryPayload,
+  getDownloadAsset,
+  getAuxiliaryAsset,
   getLeaderboard
 };

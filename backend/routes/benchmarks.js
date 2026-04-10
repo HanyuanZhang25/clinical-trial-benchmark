@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
-const { getBenchmarks, getBenchmarkByIdentifier, getDownloadPayload, getAuxiliaryPayload, getLeaderboard } = require('../services/benchmarks');
+const { createReadStream } = require('../services/storage');
+const { getBenchmarks, getBenchmarkByIdentifier, getDownloadAsset, getAuxiliaryAsset, getLeaderboard } = require('../services/benchmarks');
 
 const router = express.Router();
 
@@ -46,9 +47,9 @@ router.get('/:id/leaderboard', async (req, res) => {
   });
 });
 
-router.get('/:id/download', async (req, res) => {
-  const payload = await getDownloadPayload(req.params.id);
-  if (!payload) {
+router.get('/:id/download', async (req, res, next) => {
+  const asset = await getDownloadAsset(req.params.id);
+  if (!asset) {
     return res.status(404).json({
       success: false,
       error_code: 'BENCHMARK_NOT_FOUND',
@@ -59,14 +60,17 @@ router.get('/:id/download', async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${path.basename(payload.benchmark.slug)}-benchmark-questions.json"`
+    `attachment; filename="${path.basename(asset.benchmark.slug)}-benchmark-questions.json"`
   );
-  res.send(JSON.stringify(payload.file, null, 2));
+
+  const stream = createReadStream(asset.filePath);
+  stream.on('error', next);
+  stream.pipe(res);
 });
 
-router.get('/:id/auxiliary', async (req, res) => {
-  const payload = await getAuxiliaryPayload(req.params.id);
-  if (!payload) {
+router.get('/:id/auxiliary', async (req, res, next) => {
+  const asset = await getAuxiliaryAsset(req.params.id);
+  if (!asset) {
     return res.status(404).json({
       success: false,
       error_code: 'AUXILIARY_NOT_FOUND',
@@ -77,9 +81,12 @@ router.get('/:id/auxiliary', async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${path.basename(payload.benchmark.slug)}-auxiliary-information.json"`
+    `attachment; filename="${path.basename(asset.benchmark.slug)}-auxiliary-information.json"`
   );
-  res.send(JSON.stringify(payload.file, null, 2));
+
+  const stream = createReadStream(asset.filePath);
+  stream.on('error', next);
+  stream.pipe(res);
 });
 
 module.exports = router;

@@ -54,4 +54,13 @@ async function readText(filePath) {
   return fs.readFileSync(resolveFilePath(filePath), 'utf8');
 }
 
-module.exports = { readJson, readText, isGcsPath, parseGcsPath };
+function createReadStream(filePath) {
+  if (isGcsPath(filePath)) {
+    const { bucket, object } = parseGcsPath(filePath);
+    return storage.bucket(bucket).file(object).createReadStream();
+  }
+
+  return fs.createReadStream(resolveFilePath(filePath));
+}
+
+module.exports = { readJson, readText, createReadStream, isGcsPath, parseGcsPath };

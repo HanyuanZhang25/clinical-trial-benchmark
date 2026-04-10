@@ -76,7 +76,7 @@ async function getAuxiliaryAsset(benchmarkIdOrSlug) {
   if (!record) return null;
 
   const auxiliaryPath = isGcsPath(record.manifest_file_path)
-    ? `gs://${parseGcsPath(record.manifest_file_path).bucket}/${record.slug}-auxiliary.json`
+    ? `gs://${parseGcsPath(record.manifest_file_path).bucket}/auxiliary_${record.slug.replace('-', '_')}.json`
     : path.join(path.dirname(record.manifest_file_path), `${record.slug}-auxiliary.json`);
   try {
     return {

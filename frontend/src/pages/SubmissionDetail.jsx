@@ -44,10 +44,6 @@ function SubmissionDetail() {
           <span>Status</span>
         </div>
         <div className="stat-card">
-          <strong>{submission.total_cost.toFixed(2)}</strong>
-          <span>Total Cost</span>
-        </div>
-        <div className="stat-card">
           <strong>{formatMetric(submission.evaluation.average_f1_macro)}</strong>
           <span>Average F1 Macro</span>
         </div>

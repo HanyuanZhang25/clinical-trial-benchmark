@@ -192,7 +192,7 @@ async function listUserSubmissions(userId) {
 
 async function listAllSubmissions() {
   const rows = await db.all(`
-    SELECT s.id, s.user_id, u.username, u.email, s.model_name, s.benchmark_version, s.total_cost,
+    SELECT s.id, s.user_id, u.username, u.email, s.model_name, s.benchmark_version,
       s.status, s.submitted_at, b.display_name, b.slug, e.average_f1_macro,
       e.average_cross_entropy, e.is_public
     FROM submissions s
@@ -221,7 +221,6 @@ async function listAllSubmissions() {
     benchmark_name: row.display_name,
     benchmark_slug: row.slug,
     benchmark_version: row.benchmark_version,
-    total_cost: row.total_cost,
     status: row.status,
     average_f1_macro: row.average_f1_macro,
     average_cross_entropy: row.average_cross_entropy,
@@ -232,7 +231,8 @@ async function listAllSubmissions() {
 
 async function getSubmissionDetail(submissionId, user) {
   const row = await db.get(`
-    SELECT s.*, b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy,
+    SELECT s.id, s.user_id, s.model_name, s.benchmark_version, s.status, s.submitted_at,
+      s.raw_payload, s.validation_summary, b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy,
       e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
       e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
       e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy, e.is_public
@@ -256,10 +256,9 @@ async function getSubmissionDetail(submissionId, user) {
     benchmark_name: row.display_name,
     benchmark_slug: row.slug,
     benchmark_version: row.benchmark_version,
-    total_cost: row.total_cost,
     status: row.status,
     submitted_at: row.submitted_at,
-    raw_payload: JSON.parse(row.raw_payload),
+    raw_payload: row.raw_payload ? JSON.parse(row.raw_payload) : null,
     validation_summary: row.validation_summary ? JSON.parse(row.validation_summary) : null,
     evaluation: {
       average_f1_macro: row.average_f1_macro,

@@ -140,7 +140,6 @@ function Admin() {
               <th>Email</th>
               <th>Benchmark</th>
               <th>Status</th>
-              <th>Cost</th>
               <th>Avg F1</th>
               <th>Avg CE</th>
               <th>Submitted</th>
@@ -155,7 +154,6 @@ function Admin() {
                 <td>{submission.email}</td>
                 <td>{submission.benchmark_name}</td>
                 <td>{submission.status}</td>
-                <td>{typeof submission.total_cost === 'number' ? submission.total_cost.toFixed(2) : '-'}</td>
                 <td>{typeof submission.average_f1_macro === 'number' ? submission.average_f1_macro.toFixed(3) : '-'}</td>
                 <td>{typeof submission.average_cross_entropy === 'number' ? submission.average_cross_entropy.toFixed(3) : '-'}</td>
                 <td>{new Date(submission.submitted_at).toLocaleString()}</td>
@@ -168,7 +166,7 @@ function Admin() {
             ))}
             {!submissions.length && (
               <tr>
-                <td colSpan="10">No submissions yet.</td>
+                <td colSpan="9">No submissions yet.</td>
               </tr>
             )}
           </tbody>

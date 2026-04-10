@@ -3,45 +3,6 @@ import { Link } from 'react-router-dom'
 import FaqAccordion from '../components/FaqAccordion'
 import { api } from '../utils/api'
 
-const SCHEDULE_ROWS = [
-  {
-    challenge: 'Summer Open 2026',
-    window: 'June–September',
-    deadline: 'May 31, 2026',
-    deadlineDate: '2026-05-31T23:59:59Z',
-    release: 'September 7, 2026',
-    releaseDate: '2026-09-07T23:59:59Z',
-    status: 'Accepting Submission',
-  },
-  {
-    challenge: 'Fall Open 2026',
-    window: 'September–December',
-    deadline: 'August 31, 2026',
-    deadlineDate: '2026-08-31T23:59:59Z',
-    release: 'December 7, 2026',
-    releaseDate: '2026-12-07T23:59:59Z',
-    status: 'Upcoming',
-  },
-  {
-    challenge: 'Winter Open 2027',
-    window: 'December–March',
-    deadline: 'November 30, 2026',
-    deadlineDate: '2026-11-30T23:59:59Z',
-    release: 'March 7, 2027',
-    releaseDate: '2027-03-07T23:59:59Z',
-    status: 'Upcoming',
-  },
-  {
-    challenge: 'Spring Open 2027',
-    window: 'March–June',
-    deadline: 'February 28, 2027',
-    deadlineDate: '2027-02-28T23:59:59Z',
-    release: 'June 7, 2027',
-    releaseDate: '2027-06-07T23:59:59Z',
-    status: 'Upcoming',
-  },
-]
-
 function formatMetric(value, digits = 2) {
   return typeof value === 'number' ? value.toFixed(digits) : '-'
 }
@@ -61,6 +22,53 @@ function formatLongCountdown(dateString) {
   const seconds = totalSeconds % 60
 
   return `${String(weeks).padStart(2, '0')} weeks ${String(days).padStart(2, '0')} days ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'TBD'
+
+  const value = Date.parse(dateString)
+  if (Number.isNaN(value)) return 'TBD'
+
+  return new Date(value).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+function formatWindow(openAt, closeAt) {
+  const openValue = Date.parse(openAt)
+  const closeValue = Date.parse(closeAt)
+  if (Number.isNaN(openValue) || Number.isNaN(closeValue)) return 'TBD'
+
+  const openDate = new Date(openValue)
+  const closeDate = new Date(closeValue)
+  const openMonth = openDate.toLocaleString(undefined, { month: 'long', timeZone: 'UTC' })
+  const closeMonth = closeDate.toLocaleString(undefined, { month: 'long', timeZone: 'UTC' })
+  const closeYear = closeDate.toLocaleString(undefined, { year: 'numeric', timeZone: 'UTC' })
+
+  return openMonth === closeMonth
+    ? `${openMonth} ${closeYear}`
+    : `${openMonth}-${closeMonth} ${closeYear}`
+}
+
+function getScheduleStatusLabel(state) {
+  switch (state) {
+    case 'open_for_submission':
+      return 'Accepting Submission'
+    case 'upcoming':
+      return 'Upcoming'
+    case 'closed_pending_results':
+      return 'Closed Pending Results'
+    case 'results_published':
+      return 'Results Published'
+    case 'archived':
+      return 'Archived'
+    default:
+      return 'Scheduled'
+  }
 }
 
 const METRIC_GROUPS = [
@@ -185,12 +193,14 @@ function PublishedBenchmarkTable({ benchmark, rows }) {
 }
 
 function OpenBenchmarkPanel({ benchmark, user }) {
+  const deadlineLabel = formatDate(benchmark.submission_close_at)
+
   return (
     <div className="open-benchmark-panel">
-      <p className="eyebrow">Actively Looking for Submissions, Deadline to submit is May 31, 2026</p>
+      <p className="eyebrow">Actively Looking for Submissions, Deadline to submit is {deadlineLabel}</p>
       <h2>{benchmark.display_name}</h2>
       <p>
-        We are actively seeking submissions to participate in the Summer Open Challenge 2026.
+        We are actively seeking submissions for {benchmark.display_name}.
         Download the benchmark questions, submit your predictions for each question, and upload a
         JSON file according to our formatting rules.
       </p>
@@ -233,7 +243,6 @@ function Home({ user }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
-  const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
     async function load() {
@@ -262,14 +271,24 @@ function Home({ user }) {
     load()
   }, [])
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [])
-
   const activeBenchmark = useMemo(
     () => benchmarks.find((item) => item.id === activeTab) || benchmarks[0],
     [benchmarks, activeTab]
+  )
+
+  const scheduleRows = useMemo(
+    () =>
+      benchmarks.map((benchmark) => ({
+        id: benchmark.id,
+        challenge: benchmark.display_name,
+        window: formatWindow(benchmark.submission_open_at, benchmark.submission_close_at),
+        deadline: formatDate(benchmark.submission_close_at),
+        deadlineDate: benchmark.submission_close_at,
+        release: formatDate(benchmark.result_publish_at),
+        status: getScheduleStatusLabel(benchmark.state),
+        isLive: benchmark.state === 'open_for_submission',
+      })),
+    [benchmarks]
   )
 
   if (loading) return <div className="loading-card">Loading benchmark data...</div>
@@ -287,7 +306,7 @@ function Home({ user }) {
             <div className="notice-board top-gap">
               {content.announcement.items.map((item) => (
                 <div key={item.date} className="notice-line">
-                  <span className="notice-icon" aria-hidden="true">🎉</span>
+                  <span className="notice-icon" aria-hidden="true">*</span>
                   <div>
                     <strong>New ({item.date}): </strong>
                     {item.parts.map((part, index) =>
@@ -324,15 +343,15 @@ function Home({ user }) {
                 </tr>
               </thead>
               <tbody>
-                {SCHEDULE_ROWS.map((row) => (
-                  <tr key={row.challenge}>
+                {scheduleRows.map((row) => (
+                  <tr key={row.id}>
                     <td>{row.challenge}</td>
                     <td>{row.window}</td>
                     <td>
                       <div>{row.deadline}</div>
-                      {row.challenge === 'Summer Open 2026' && (
+                      {row.isLive && row.deadlineDate && (
                         <small className="schedule-countdown">
-                          {formatLongCountdown(row.deadlineDate, now)}
+                          {formatLongCountdown(row.deadlineDate)}
                         </small>
                       )}
                     </td>
@@ -340,7 +359,7 @@ function Home({ user }) {
                       <div>{row.release}</div>
                     </td>
                     <td>
-                      <span className={row.status === 'Accepting Submission' ? 'schedule-status-live' : 'schedule-status-upcoming'}>
+                      <span className={row.isLive ? 'schedule-status-live' : 'schedule-status-upcoming'}>
                         {row.status}
                       </span>
                     </td>

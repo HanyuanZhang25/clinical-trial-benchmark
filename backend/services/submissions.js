@@ -131,7 +131,9 @@ async function createSubmission({ user, payload }) {
 
   await db.run(`
     UPDATE submissions
-    SET status = 'discarded'
+    SET status = 'discarded',
+      raw_payload = NULL,
+      validation_summary = NULL
     WHERE user_id = ? AND benchmark_id = ? AND status = 'latest'
   `, [user.id, benchmark.id]);
 

@@ -67,7 +67,7 @@ async function getDownloadPayload(benchmarkIdOrSlug) {
   if (!record || !record.download_file_path) return null;
   return {
     benchmark: serializeBenchmark(record),
-    file: readJson(record.download_file_path)
+    file: await readJson(record.download_file_path)
   };
 }
 
@@ -81,7 +81,7 @@ async function getAuxiliaryPayload(benchmarkIdOrSlug) {
   try {
     return {
       benchmark: serializeBenchmark(record),
-      file: readJson(auxiliaryPath)
+      file: await readJson(auxiliaryPath)
     };
   } catch (error) {
     return null;

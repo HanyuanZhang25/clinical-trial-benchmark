@@ -128,21 +128,18 @@ function Submit({ user }) {
             <div className="card prose-card">
               <p>Upload a UTF-8 encoded JSON file. Direct pasting is not supported here.</p>
               <p>
-                Download the benchmark file for the full `questions_by_id` mapping and the auxiliary
+                Download the benchmark file for the full question-id mapping and the auxiliary
                 information file for trial metadata keyed by NCT ID.
               </p>
-              <p>Required fields:</p>
+              <p>Accepted format:</p>
               <pre className="code-block">{`{
-  "answers": [
-    { "problem_id": 0, "answer": "A" },
-    { "problem_id": 1, "answer": "B" }
-  ]
+  "0": ["a", "a"],
+  "1": ["b", "b"]
 }`}</pre>
-              <p>Optional fields:</p>
-              <pre className="code-block">{`{
-  "total_cost": 123.45
-}`}</pre>
-              <p>"problem_id" must be a non-negative integer question ID, and "answer" must be A, B, or C.</p>
+              <p>The JSON must be a dictionary: each key is a question id and each value is a non-empty option list.</p>
+              <p>All value lists must have the same length across the whole file.</p>
+              <p>`non-inferiority` questions allow `a`, `b`, `c`. Other questions allow only `a`, `b`.</p>
+              <p>Uppercase answers are accepted and normalized to lowercase by the backend.</p>
               {selectedBenchmark && (
                 <div className="button-row">
                   <a className="btn btn-secondary" href={api.getDownloadUrl(selectedBenchmark.id)}>

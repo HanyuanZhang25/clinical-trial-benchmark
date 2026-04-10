@@ -8,67 +8,111 @@ function validationError(errorCode, message, status = 400) {
   return error;
 }
 
+function formatIdSample(ids) {
+  return ids.slice(0, 5).join(', ');
+}
+
 async function validateSubmissionPayload({ benchmark, payload }) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    throw validationError('INVALID_SCHEMA', 'Submission payload must be a JSON object.');
-  }
-
-  if (!Array.isArray(payload.answers)) {
-    throw validationError('INVALID_SCHEMA', 'answers must be a list.');
-  }
-
-  if (payload.total_cost !== undefined && (typeof payload.total_cost !== 'number' || Number.isNaN(payload.total_cost))) {
-    throw validationError('INVALID_SCHEMA', 'total_cost must be numeric when provided.');
-  }
-
-  if (payload.total_cost !== undefined && payload.total_cost < 0) {
-    throw validationError('INVALID_SEMANTIC', 'total_cost must be greater than or equal to 0.');
+    throw validationError('INVALID_SCHEMA', 'It should be a dict, the key is question, the value is your option list.');
   }
 
   const manifest = await getManifestForBenchmark(benchmark.id);
-  const validIds = new Set(manifest.map((item) => Number(item.problem_id)));
-  const seen = new Set();
+  const validQuestions = new Map(
+    manifest.map((item) => [Number(item.problem_id), item.section])
+  );
+  const expectedIds = [...validQuestions.keys()];
+  const submittedEntries = Object.entries(payload);
 
-  for (let index = 0; index < payload.answers.length; index += 1) {
-    const item = payload.answers[index];
-    if (!item || typeof item !== 'object') {
-      throw validationError('INVALID_SCHEMA', `answers[${index}] must be an object.`);
-    }
-    if (item.problem_id === undefined || item.problem_id === null || item.problem_id === '') {
-      throw validationError('INVALID_SCHEMA', `answers[${index}].problem_id is missing.`);
-    }
-    if (item.answer == null) {
-      throw validationError('INVALID_SCHEMA', `answers[${index}].answer is missing.`);
-    }
-    const normalizedProblemId = Number(item.problem_id);
-    if (!Number.isInteger(normalizedProblemId) || normalizedProblemId < 0) {
-      throw validationError('INVALID_SEMANTIC', `answers[${index}].problem_id must be a non-negative integer.`);
-    }
-    const normalizedAnswer = String(item.answer).trim().toUpperCase();
-    if (!['A', 'B', 'C'].includes(normalizedAnswer)) {
-      throw validationError('INVALID_SEMANTIC', `answers[${index}].answer must be A, B, or C.`);
-    }
-    if (seen.has(normalizedProblemId)) {
-      throw validationError('INVALID_SEMANTIC', `Duplicate problem_id found: ${normalizedProblemId}.`);
-    }
-    if (!validIds.has(normalizedProblemId)) {
-      throw validationError('INVALID_SEMANTIC', `${normalizedProblemId} does not belong to ${benchmark.display_name}.`);
-    }
-    seen.add(normalizedProblemId);
-    item.problem_id = normalizedProblemId;
-    item.answer = normalizedAnswer;
+  if (submittedEntries.length !== manifest.length) {
+    throw validationError(
+      'INVALID_SEMANTIC',
+      `The number of submitted questions must match the benchmark size (${manifest.length}).`
+    );
   }
 
-  const missingIds = manifest.map((item) => Number(item.problem_id)).filter((problemId) => !seen.has(problemId));
+  const invalidQuestionIds = [];
+  const normalizedPayload = {};
+  let expectedOptionCount = null;
+  const illegalOptionIds = [];
+
+  for (const [rawQuestionId, rawValue] of submittedEntries) {
+    const normalizedProblemId = Number(rawQuestionId);
+
+    if (!Number.isInteger(normalizedProblemId) || normalizedProblemId < 0 || !validQuestions.has(normalizedProblemId)) {
+      invalidQuestionIds.push(rawQuestionId);
+      continue;
+    }
+
+    if (!Array.isArray(rawValue)) {
+      throw validationError('INVALID_SCHEMA', 'The value\'s format should be list, and fill the option in it.');
+    }
+
+    if (rawValue.length === 0) {
+      throw validationError('INVALID_SEMANTIC', 'The option list must contain at least one element.');
+    }
+
+    if (expectedOptionCount === null) {
+      expectedOptionCount = rawValue.length;
+    } else if (rawValue.length !== expectedOptionCount) {
+      throw validationError('INVALID_SEMANTIC', 'The option\'s size is not same, please unify it.');
+    }
+
+    const allowedOptions = validQuestions.get(normalizedProblemId) === 'non-inferiority'
+      ? new Set(['a', 'b', 'c'])
+      : new Set(['a', 'b']);
+
+    const normalizedOptions = [];
+    let hasIllegalOption = false;
+
+    for (const option of rawValue) {
+      const normalizedOption = String(option).trim().toLowerCase();
+      if (!allowedOptions.has(normalizedOption)) {
+        hasIllegalOption = true;
+        break;
+      }
+      normalizedOptions.push(normalizedOption);
+    }
+
+    if (hasIllegalOption) {
+      illegalOptionIds.push(normalizedProblemId);
+      continue;
+    }
+
+    normalizedPayload[String(normalizedProblemId)] = normalizedOptions;
+  }
+
+  if (invalidQuestionIds.length) {
+    throw validationError(
+      'INVALID_SEMANTIC',
+      `Some question ids are wrong: ${formatIdSample(invalidQuestionIds)}.`
+    );
+  }
+
+  if (illegalOptionIds.length) {
+    throw validationError(
+      'INVALID_SEMANTIC',
+      `Some element's option is illegal. Relevant question ids: ${formatIdSample(illegalOptionIds)}.`
+    );
+  }
+
+  const missingIds = expectedIds.filter((problemId) => !(String(problemId) in normalizedPayload));
   if (missingIds.length) {
-    throw validationError('INVALID_SEMANTIC', `Missing required problem ids: ${missingIds.join(', ')}.`);
+    throw validationError(
+      'INVALID_SEMANTIC',
+      `Missing required question ids: ${formatIdSample(missingIds)}.`
+    );
   }
+
+  Object.keys(payload).forEach((key) => delete payload[key]);
+  Object.assign(payload, normalizedPayload);
 
   return {
     manifestCount: manifest.length,
-    answerCount: payload.answers.length,
+    answerCount: Object.keys(normalizedPayload).length,
+    optionCount: expectedOptionCount,
     missingIds,
-    acceptedIds: [...seen]
+    acceptedIds: expectedIds
   };
 }
 
@@ -84,8 +128,6 @@ async function createSubmission({ user, payload }) {
   }
 
   const summary = await validateSubmissionPayload({ benchmark, payload });
-  const normalizedTotalCost = typeof payload.total_cost === 'number' ? payload.total_cost : 0;
-  const benchmarkVersion = payload.benchmark_version || benchmark.display_name;
 
   const result = await db.insert(`
     INSERT INTO submissions (
@@ -96,9 +138,9 @@ async function createSubmission({ user, payload }) {
     user.id,
     benchmark.id,
     user.username,
-    benchmarkVersion,
+    benchmark.display_name,
     JSON.stringify(payload),
-    normalizedTotalCost,
+    0,
     'pending_results',
     JSON.stringify(summary)
   ]);
@@ -107,7 +149,7 @@ async function createSubmission({ user, payload }) {
     INSERT INTO submission_evaluations (
       submission_id, benchmark_id, display_username, model_name, cost, status, is_public
     ) VALUES (?, ?, ?, ?, ?, 'pending_results', 0)
-  `, [result.lastInsertRowid, benchmark.id, user.username, user.username, normalizedTotalCost]);
+  `, [result.lastInsertRowid, benchmark.id, user.username, user.username, 0]);
 
   return {
     id: result.lastInsertRowid,

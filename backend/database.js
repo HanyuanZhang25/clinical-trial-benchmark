@@ -1,5 +1,4 @@
 const path = require('path');
-const Database = require('better-sqlite3');
 const { Pool } = require('pg');
 
 const dataDir = path.join(__dirname, 'data');
@@ -34,6 +33,8 @@ function toPgParams(sql) {
 }
 
 function openSqliteDatabase() {
+  const Database = require('better-sqlite3');
+
   try {
     sqliteDb = new Database(primaryDbPath);
     usingFallback = false;

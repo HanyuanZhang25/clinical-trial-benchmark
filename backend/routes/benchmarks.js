@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { getBenchmarks, getBenchmarkByIdentifier, getDownloadPayload, getLeaderboard } = require('../services/benchmarks');
+const { getBenchmarks, getBenchmarkByIdentifier, getDownloadPayload, getAuxiliaryPayload, getLeaderboard } = require('../services/benchmarks');
 
 const router = express.Router();
 
@@ -60,6 +60,24 @@ router.get('/:id/download', async (req, res) => {
   res.setHeader(
     'Content-Disposition',
     `attachment; filename="${path.basename(payload.benchmark.slug)}-benchmark-questions.json"`
+  );
+  res.send(JSON.stringify(payload.file, null, 2));
+});
+
+router.get('/:id/auxiliary', async (req, res) => {
+  const payload = await getAuxiliaryPayload(req.params.id);
+  if (!payload) {
+    return res.status(404).json({
+      success: false,
+      error_code: 'AUXILIARY_NOT_FOUND',
+      message: 'Auxiliary benchmark file not found.'
+    });
+  }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${path.basename(payload.benchmark.slug)}-auxiliary-information.json"`
   );
   res.send(JSON.stringify(payload.file, null, 2));
 });

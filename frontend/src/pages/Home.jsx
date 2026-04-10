@@ -204,10 +204,17 @@ function OpenBenchmarkPanel({ benchmark, user }) {
         Download the benchmark questions, submit your predictions for each question, and upload a
         JSON file according to our formatting rules.
       </p>
+      <p>
+        Auxiliary information is also available as trial metadata keyed by NCT ID. Participants may
+        use that file to support their models on this benchmark.
+      </p>
 
       <div className="cta-row">
         <a className="btn btn-secondary" href={api.getDownloadUrl(benchmark.id)}>
           Download the Benchmark Questions
+        </a>
+        <a className="btn btn-secondary" href={api.getAuxiliaryUrl(benchmark.id)}>
+          Auxiliary Information
         </a>
         <Link className="btn btn-primary" to="/submit">
           Ready to Submit?

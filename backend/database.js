@@ -9,6 +9,15 @@ const fallbackDbPath = path.join('/tmp', 'clinical-trial-arena.db');
 const databaseUrl = process.env.DATABASE_URL;
 const runningOnCloudRun = !!process.env.K_SERVICE;
 const driver = databaseUrl ? 'postgres' : 'sqlite';
+const benchmarkAssetsBucket = process.env.BENCHMARK_ASSETS_BUCKET || 'test-to-see-clinical-trial-data';
+
+function benchmarkAssetPath(fileName, { useGcsInProduction = false } = {}) {
+  if (runningOnCloudRun && useGcsInProduction) {
+    return `gs://${benchmarkAssetsBucket}/${fileName}`;
+  }
+
+  return path.join(filesDir, fileName);
+}
 
 if (runningOnCloudRun && !databaseUrl) {
   throw new Error('DATABASE_URL is required when running on Cloud Run. Configure Cloud SQL/PostgreSQL to persist user data.');
@@ -328,8 +337,8 @@ const benchmarkSeeds = [
     submission_open_at: '2025-02-01T00:00:00Z',
     submission_close_at: '2025-02-28T23:59:59Z',
     result_publish_at: '2025-03-20T00:00:00Z',
-    download_file_path: path.join(filesDir, '25-02-download.json'),
-    manifest_file_path: path.join(filesDir, '25-02-manifest.json'),
+    download_file_path: benchmarkAssetPath('25-02-download.json'),
+    manifest_file_path: benchmarkAssetPath('25-02-manifest.json'),
     has_ground_truth: 1,
     description: 'Historical benchmark with published leaderboard metrics.'
   },
@@ -341,8 +350,8 @@ const benchmarkSeeds = [
     submission_open_at: '2025-09-01T00:00:00Z',
     submission_close_at: '2025-09-30T23:59:59Z',
     result_publish_at: '2025-10-20T00:00:00Z',
-    download_file_path: path.join(filesDir, '25-09-download.json'),
-    manifest_file_path: path.join(filesDir, '25-09-manifest.json'),
+    download_file_path: benchmarkAssetPath('25-09-download.json'),
+    manifest_file_path: benchmarkAssetPath('25-09-manifest.json'),
     has_ground_truth: 1,
     description: 'Historical benchmark with published leaderboard metrics.'
   },
@@ -354,8 +363,8 @@ const benchmarkSeeds = [
     submission_open_at: '2026-01-01T00:00:00Z',
     submission_close_at: '2026-05-31T23:59:59Z',
     result_publish_at: '2026-07-20T00:00:00Z',
-    download_file_path: path.join(filesDir, '26-06-download.json'),
-    manifest_file_path: path.join(filesDir, '26-06-manifest.json'),
+    download_file_path: benchmarkAssetPath('26-06-download.json', { useGcsInProduction: true }),
+    manifest_file_path: benchmarkAssetPath('26-06-manifest.json', { useGcsInProduction: true }),
     has_ground_truth: 0,
     description: 'Current benchmark window that accepts new submissions.'
   }

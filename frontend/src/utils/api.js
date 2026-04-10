@@ -37,6 +37,7 @@ export const api = {
   getBenchmarks: () => request('/benchmarks'),
   getBenchmarkLeaderboard: (id) => request(`/benchmarks/${id}/leaderboard`),
   getDownloadUrl: (id) => `${API_BASE}/benchmarks/${id}/download`,
+  getAuxiliaryUrl: (id) => `${API_BASE}/benchmarks/${id}/auxiliary`,
   getHomeContent: () => request('/content/home'),
 
   submit: (payload) => request('/submissions', {

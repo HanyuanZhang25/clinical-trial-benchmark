@@ -41,8 +41,8 @@ async function validateSubmissionPayload({ benchmark, payload }) {
       throw validationError('INVALID_SCHEMA', `answers[${index}].answer is missing.`);
     }
     const normalizedProblemId = Number(item.problem_id);
-    if (!Number.isInteger(normalizedProblemId) || normalizedProblemId < 0 || normalizedProblemId > 9999) {
-      throw validationError('INVALID_SEMANTIC', `answers[${index}].problem_id must be an integer between 0 and 9999.`);
+    if (!Number.isInteger(normalizedProblemId) || normalizedProblemId < 0) {
+      throw validationError('INVALID_SEMANTIC', `answers[${index}].problem_id must be a non-negative integer.`);
     }
     const normalizedAnswer = String(item.answer).trim().toUpperCase();
     if (!['A', 'B', 'C'].includes(normalizedAnswer)) {

@@ -2,6 +2,20 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
 
+function formatDate(dateString) {
+  if (!dateString) return 'TBD'
+
+  const value = Date.parse(dateString)
+  if (Number.isNaN(value)) return 'TBD'
+
+  return new Date(value).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
 function Submit({ user }) {
   const [benchmarks, setBenchmarks] = useState([])
   const [jsonText, setJsonText] = useState('')
@@ -94,7 +108,7 @@ function Submit({ user }) {
           {selectedBenchmark && (
             <div className="callout">
               <strong>{selectedBenchmark.display_name}</strong> accepts submissions until{' '}
-              {new Date(selectedBenchmark.submission_close_at).toLocaleDateString()}.
+              {formatDate(selectedBenchmark.submission_close_at)}.
             </div>
           )}
 
@@ -113,18 +127,32 @@ function Submit({ user }) {
             <label>JSON Formatting Rules</label>
             <div className="card prose-card">
               <p>Upload a UTF-8 encoded JSON file. Direct pasting is not supported here.</p>
+              <p>
+                Download the benchmark file for the full `questions_by_id` mapping and the auxiliary
+                information file for trial metadata keyed by NCT ID.
+              </p>
               <p>Required fields:</p>
               <pre className="code-block">{`{
   "answers": [
-    { "problem_id": 201, "answer": "A" },
-    { "problem_id": 202, "answer": "B" }
+    { "problem_id": 0, "answer": "A" },
+    { "problem_id": 1, "answer": "B" }
   ]
 }`}</pre>
               <p>Optional fields:</p>
               <pre className="code-block">{`{
   "total_cost": 123.45
 }`}</pre>
-              <p>"problem_id" must be an integer, and "answer" must be A, B, or C.</p>
+              <p>"problem_id" must be a non-negative integer question ID, and "answer" must be A, B, or C.</p>
+              {selectedBenchmark && (
+                <div className="button-row">
+                  <a className="btn btn-secondary" href={api.getDownloadUrl(selectedBenchmark.id)}>
+                    Download Benchmark Questions
+                  </a>
+                  <a className="btn btn-secondary" href={api.getAuxiliaryUrl(selectedBenchmark.id)}>
+                    Auxiliary Information
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 

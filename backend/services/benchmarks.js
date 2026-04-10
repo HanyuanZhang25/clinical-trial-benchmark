@@ -1,5 +1,6 @@
 const db = require('../database');
-const { readJson } = require('./storage');
+const { readJson, isGcsPath, parseGcsPath } = require('./storage');
+const path = require('path');
 
 function deriveState(benchmark) {
   const now = Date.now();
@@ -70,6 +71,23 @@ async function getDownloadPayload(benchmarkIdOrSlug) {
   };
 }
 
+async function getAuxiliaryPayload(benchmarkIdOrSlug) {
+  const record = await getBenchmarkRecord(benchmarkIdOrSlug);
+  if (!record) return null;
+
+  const auxiliaryPath = isGcsPath(record.manifest_file_path)
+    ? `gs://${parseGcsPath(record.manifest_file_path).bucket}/${record.slug}-auxiliary.json`
+    : path.join(path.dirname(record.manifest_file_path), `${record.slug}-auxiliary.json`);
+  try {
+    return {
+      benchmark: serializeBenchmark(record),
+      file: readJson(auxiliaryPath)
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
 async function getLeaderboard(benchmarkIdOrSlug) {
   const benchmark = await getBenchmarkRecord(benchmarkIdOrSlug);
   if (!benchmark) return null;
@@ -120,5 +138,6 @@ module.exports = {
   getBenchmarkRecord,
   getManifestForBenchmark,
   getDownloadPayload,
+  getAuxiliaryPayload,
   getLeaderboard
 };

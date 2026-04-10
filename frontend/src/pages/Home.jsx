@@ -30,7 +30,7 @@ function formatDate(dateString) {
   const value = Date.parse(dateString)
   if (Number.isNaN(value)) return 'TBD'
 
-  return new Date(value).toLocaleDateString(undefined, {
+  return new Date(value).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -45,9 +45,9 @@ function formatWindow(openAt, closeAt) {
 
   const openDate = new Date(openValue)
   const closeDate = new Date(closeValue)
-  const openMonth = openDate.toLocaleString(undefined, { month: 'long', timeZone: 'UTC' })
-  const closeMonth = closeDate.toLocaleString(undefined, { month: 'long', timeZone: 'UTC' })
-  const closeYear = closeDate.toLocaleString(undefined, { year: 'numeric', timeZone: 'UTC' })
+  const openMonth = openDate.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })
+  const closeMonth = closeDate.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })
+  const closeYear = closeDate.toLocaleString('en-US', { year: 'numeric', timeZone: 'UTC' })
 
   return openMonth === closeMonth
     ? `${openMonth} ${closeYear}`

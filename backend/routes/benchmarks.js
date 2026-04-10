@@ -60,7 +60,7 @@ router.get('/:id/download', async (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${path.basename(asset.benchmark.slug)}-benchmark-questions.json"`
+    `attachment; filename="benchmark-questions-${path.basename(asset.benchmark.slug)}.json"`
   );
 
   const stream = createReadStream(asset.filePath);
@@ -81,7 +81,7 @@ router.get('/:id/auxiliary', async (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${path.basename(asset.benchmark.slug)}-auxiliary-information.json"`
+    `attachment; filename="auxiliary-information-${path.basename(asset.benchmark.slug)}.json"`
   );
 
   const stream = createReadStream(asset.filePath);

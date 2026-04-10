@@ -129,6 +129,12 @@ async function createSubmission({ user, payload }) {
 
   const summary = await validateSubmissionPayload({ benchmark, payload });
 
+  await db.run(`
+    UPDATE submissions
+    SET status = 'discarded'
+    WHERE user_id = ? AND benchmark_id = ? AND status = 'latest'
+  `, [user.id, benchmark.id]);
+
   const result = await db.insert(`
     INSERT INTO submissions (
       user_id, benchmark_id, model_name, benchmark_version, raw_payload,
@@ -141,7 +147,7 @@ async function createSubmission({ user, payload }) {
     benchmark.display_name,
     JSON.stringify(payload),
     0,
-    'pending_results',
+    'latest',
     JSON.stringify(summary)
   ]);
 
@@ -158,18 +164,16 @@ async function createSubmission({ user, payload }) {
       slug: benchmark.slug,
       display_name: benchmark.display_name
     },
-    status: 'pending_results',
+    status: 'latest',
     validation_summary: summary
   };
 }
 
 async function listUserSubmissions(userId) {
   const rows = await db.all(`
-    SELECT s.id, s.model_name, s.benchmark_version, s.total_cost, s.status, s.submitted_at,
-      b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy, e.is_public
+    SELECT s.id, s.status, s.submitted_at, b.display_name, b.slug
     FROM submissions s
     JOIN benchmarks b ON b.id = s.benchmark_id
-    LEFT JOIN submission_evaluations e ON e.submission_id = s.id
     WHERE s.user_id = ?
     ORDER BY s.submitted_at DESC
     LIMIT 50
@@ -177,15 +181,9 @@ async function listUserSubmissions(userId) {
 
   return rows.map((row) => ({
     id: row.id,
-    model_name: row.model_name,
     benchmark_name: row.display_name,
     benchmark_slug: row.slug,
-    benchmark_version: row.benchmark_version,
-    total_cost: row.total_cost,
     status: row.status,
-    average_f1_macro: row.average_f1_macro,
-    average_cross_entropy: row.average_cross_entropy,
-    results_published: !!row.is_public,
     submitted_at: row.submitted_at
   }));
 }
@@ -203,6 +201,7 @@ async function listAllSubmissions() {
       SELECT 1
       FROM submissions newer
       WHERE newer.user_id = s.user_id
+        AND newer.benchmark_id = s.benchmark_id
         AND (
           newer.submitted_at > s.submitted_at
           OR (newer.submitted_at = s.submitted_at AND newer.id > s.id)

@@ -36,28 +36,16 @@ function MySubmissions() {
             <thead>
               <tr>
                 <th>Benchmark</th>
-                <th>Status</th>
-                <th>Total Cost</th>
-                <th>Average F1 Macro</th>
-                <th>Results</th>
                 <th>Submitted At</th>
-                <th></th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {submissions.map((submission) => (
                 <tr key={submission.id}>
                   <td>{submission.benchmark_name}</td>
-                  <td><span className="pill">{submission.status.replaceAll('_', ' ')}</span></td>
-                  <td>{submission.total_cost.toFixed(2)}</td>
-                  <td>{submission.average_f1_macro != null ? submission.average_f1_macro.toFixed(3) : '-'}</td>
-                  <td>{submission.results_published ? 'Published' : 'Pending'}</td>
                   <td>{new Date(submission.submitted_at).toLocaleString()}</td>
-                  <td>
-                    <Link className="btn btn-secondary compact-btn" to={`/submission/${submission.id}`}>
-                      View
-                    </Link>
-                  </td>
+                  <td><span className="pill">{submission.status}</span></td>
                 </tr>
               ))}
             </tbody>

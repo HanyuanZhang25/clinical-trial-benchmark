@@ -45,7 +45,7 @@ function App() {
             <Route path="/verify-email" element={user ? <VerifyEmail user={user} onVerified={setUser} /> : <Navigate to="/login" />} />
             <Route path="/submit" element={user ? <Submit user={user} /> : <Navigate to="/login" />} />
             <Route path="/my-submissions" element={user ? <MySubmissions /> : <Navigate to="/login" />} />
-            <Route path="/submission/:id" element={user ? <SubmissionDetail /> : <Navigate to="/login" />} />
+            <Route path="/submission/:id" element={user ? <SubmissionDetail user={user} /> : <Navigate to="/login" />} />
             <Route path="/admin" element={user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
           </Routes>
         </main>

@@ -126,10 +126,10 @@ function Submit({ user }) {
           <div className="form-group">
             <label>JSON Formatting Rules</label>
             <div className="card prose-card">
-              <p>Upload a UTF-8 encoded JSON file. Direct pasting is not supported here.</p>
+              <p>Upload a UTF-8 encoded JSON file, other format is not acceptable.</p>
               <p>
-                Download the benchmark file for the full question-id mapping and the auxiliary
-                information file for trial metadata keyed by NCT ID.
+                You can download the benchmark by click “Download Benchmark Questions” button.
+                You can also download the Auxiliary Information to supply additional information.
               </p>
               <p>Accepted format:</p>
               <pre className="code-block">{`{
@@ -139,7 +139,7 @@ function Submit({ user }) {
               <p>The JSON must be a dictionary: each key is a question id and each value is a non-empty option list.</p>
               <p>All value lists must have the same length across the whole file.</p>
               <p>`non-inferiority` questions allow `a`, `b`, `c`. Other questions allow only `a`, `b`.</p>
-              <p>Uppercase answers are accepted and normalized to lowercase by the backend.</p>
+              <p>Uppercase options are accepted.</p>
               {selectedBenchmark && (
                 <div className="button-row">
                   <a className="btn btn-secondary" href={api.getDownloadUrl(selectedBenchmark.id)}>

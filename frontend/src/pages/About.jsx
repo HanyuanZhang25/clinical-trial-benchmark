@@ -27,16 +27,6 @@ function About() {
         ))}
       </div>
 
-      <div className="card top-gap">
-        <h2 className="section-title">Submission JSON Example</h2>
-        <pre className="code-block">{`{
-  "answers": [
-    { "problem_id": 201, "answer": "A" },
-    { "problem_id": 202, "answer": "B" }
-  ]
-}`}</pre>
-      </div>
-
       <section className="info-section">
         <div className="section-header">
           <p className="eyebrow">FAQ</p>

@@ -48,6 +48,9 @@ function Login({ onLogin }) {
         <div className="auth-link">
           Need an account? <Link to="/register">Create one</Link>
         </div>
+        <div className="auth-link">
+          Forgot your password? <Link to="/reset-password">Reset it</Link>
+        </div>
       </div>
     </div>
   )

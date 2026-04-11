@@ -4,6 +4,7 @@ const { parseCookies, buildCookie } = require('./cookies');
 
 const SESSION_COOKIE = 'cta_session';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+const PASSWORD_RESET_MAX_AGE_SECONDS = 15 * 60;
 
 function signSession(user) {
   return jwt.sign(
@@ -20,6 +21,26 @@ function signSession(user) {
 
 function verifySession(token) {
   return jwt.verify(token, process.env.JWT_SECRET);
+}
+
+function signPasswordResetToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      purpose: 'password_reset'
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: `${PASSWORD_RESET_MAX_AGE_SECONDS}s` }
+  );
+}
+
+function verifyPasswordResetToken(token) {
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  if (payload.purpose !== 'password_reset') {
+    throw new Error('Invalid password reset token.');
+  }
+  return payload;
 }
 
 function attachSession(res, user) {
@@ -59,5 +80,7 @@ module.exports = {
   clearSession,
   readSessionToken,
   verifySession,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
   generateVerificationCode
 };

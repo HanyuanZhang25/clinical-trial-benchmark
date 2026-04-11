@@ -32,6 +32,18 @@ export const api = {
     body: JSON.stringify({ code }),
   }),
   resendVerification: () => request('/auth/resend-verification', { method: 'POST' }),
+  requestPasswordReset: (email) => request('/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  }),
+  verifyPasswordResetCode: (email, code) => request('/auth/password-reset/verify', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  }),
+  confirmPasswordReset: (token, password, confirmPassword) => request('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, password, confirm_password: confirmPassword }),
+  }),
   getProfile: () => request('/me'),
 
   getBenchmarks: () => request('/benchmarks'),

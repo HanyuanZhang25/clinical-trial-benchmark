@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../database');
 const { authenticateToken } = require('../middleware/auth');
-const { attachSession, clearSession, generateVerificationCode } = require('../lib/security');
+const { attachSession, clearSession, generateVerificationCode, signPasswordResetToken, verifyPasswordResetToken } = require('../lib/security');
 const { rateLimit } = require('../lib/rateLimiter');
 const { logAuthEvent, logAudit } = require('../services/audit');
 const { sendVerificationCode } = require('../services/email');
@@ -38,26 +38,27 @@ async function getLatestVerification(userId) {
   return db.get(`
     SELECT id, created_at
     FROM email_verifications
-    WHERE user_id = ?
+    WHERE user_id = ? AND purpose = 'signup'
     ORDER BY created_at DESC
     LIMIT 1
   `, [userId]);
 }
 
-async function createVerification(user) {
-  await db.run('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL', [user.id]);
+async function createVerification(user, purpose = 'signup') {
+  await db.run('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND purpose = ? AND used_at IS NULL', [user.id, purpose]);
 
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   await db.run(`
     INSERT INTO email_verifications (user_id, code, purpose, expires_at)
-    VALUES (?, ?, 'signup', ?)
-  `, [user.id, code, expiresAt]);
+    VALUES (?, ?, ?, ?)
+  `, [user.id, code, purpose, expiresAt]);
 
   await sendVerificationCode({
     email: user.email,
     code,
-    username: user.username
+    username: user.username,
+    purpose: purpose === 'password_reset' ? 'password reset' : 'email verification'
   });
 
   return code;
@@ -196,6 +197,201 @@ router.post('/logout', (req, res) => {
   clearSession(res);
   res.json({ success: true, message: 'Signed out.' });
 });
+
+router.post(
+  '/password-reset/request',
+  rateLimit({
+    key: 'password_reset_request',
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+    message: 'Too many password reset attempts. Please try again later.'
+  }),
+  async (req, res) => {
+    const normalizedEmail = normalizeEmail(req.body.email);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_INPUT',
+        message: 'Email is required.'
+      });
+    }
+
+    const user = await db.get(`
+      SELECT id, username, email
+      FROM users
+      WHERE lower(trim(email)) = ?
+    `, [normalizedEmail]);
+
+    if (user) {
+      try {
+        await createVerification(user, 'password_reset');
+        await logAuthEvent({ userId: user.id, eventType: 'password_reset_request', success: true, ipAddress: getIpAddress(req) });
+        await logAudit({ userId: user.id, action: 'password_reset_request', entityType: 'user', entityId: String(user.id) });
+      } catch (error) {
+        return res.status(502).json({
+          success: false,
+          error_code: 'EMAIL_DELIVERY_FAILED',
+          message: 'Failed to send verification email. Please try again later.'
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'If this email matches an account, a verification code has been sent.'
+    });
+  }
+);
+
+router.post(
+  '/password-reset/verify',
+  rateLimit({
+    key: 'password_reset_verify',
+    limit: 20,
+    windowMs: 15 * 60 * 1000,
+    message: 'Too many verification attempts. Please try again later.'
+  }),
+  async (req, res) => {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const code = req.body.code?.trim();
+
+    if (!normalizedEmail || !code) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_INPUT',
+        message: 'Email and verification code are required.'
+      });
+    }
+
+    const user = await db.get(`
+      SELECT id, username, email
+      FROM users
+      WHERE lower(trim(email)) = ?
+    `, [normalizedEmail]);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_CODE',
+        message: 'Verification code is invalid.'
+      });
+    }
+
+    const verification = await db.get(`
+      SELECT *
+      FROM email_verifications
+      WHERE user_id = ? AND purpose = 'password_reset' AND code = ? AND used_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [user.id, code]);
+
+    if (!verification) {
+      await logAuthEvent({ userId: user.id, eventType: 'password_reset_verify', success: false, ipAddress: getIpAddress(req) });
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_CODE',
+        message: 'Verification code is invalid.'
+      });
+    }
+
+    if (Date.parse(verification.expires_at) < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'EXPIRED_CODE',
+        message: 'Verification code has expired.'
+      });
+    }
+
+    await db.run('UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE id = ?', [verification.id]);
+    await logAuthEvent({ userId: user.id, eventType: 'password_reset_verify', success: true, ipAddress: getIpAddress(req) });
+
+    res.json({
+      success: true,
+      reset_token: signPasswordResetToken(user),
+      message: 'Verification code accepted. Please set your new password.'
+    });
+  }
+);
+
+router.post(
+  '/password-reset/confirm',
+  rateLimit({
+    key: 'password_reset_confirm',
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+    message: 'Too many password reset attempts. Please try again later.'
+  }),
+  async (req, res) => {
+    const token = req.body.token;
+    const password = req.body.password;
+    const confirmPassword = req.body.confirm_password;
+
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_INPUT',
+        message: 'Token, password, and repeated password are required.'
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'PASSWORD_MISMATCH',
+        message: 'The repeated password does not match.'
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'WEAK_PASSWORD',
+        message: 'Password must be at least 8 characters.'
+      });
+    }
+
+    let payload;
+    try {
+      payload = verifyPasswordResetToken(token);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_RESET_TOKEN',
+        message: 'Password reset session is invalid or expired.'
+      });
+    }
+
+    const user = await db.get(`
+      SELECT id, username, email
+      FROM users
+      WHERE id = ?
+    `, [payload.id]);
+
+    if (!user || normalizeEmail(user.email) !== normalizeEmail(payload.email)) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_RESET_TOKEN',
+        message: 'Password reset session is invalid or expired.'
+      });
+    }
+
+    const hashedPassword = bcrypt.hashSync(password, 12);
+    await db.run(`
+      UPDATE users
+      SET password = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [hashedPassword, user.id]);
+
+    await logAuthEvent({ userId: user.id, eventType: 'password_reset_confirm', success: true, ipAddress: getIpAddress(req) });
+    await logAudit({ userId: user.id, action: 'password_reset_confirm', entityType: 'user', entityId: String(user.id) });
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully. You can now sign in with the new password.'
+    });
+  }
+);
 
 router.post('/verify-email', authenticateToken, async (req, res) => {
   const { code } = req.body;

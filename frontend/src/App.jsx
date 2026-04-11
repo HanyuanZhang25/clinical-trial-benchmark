@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
+import ResetPassword from './pages/ResetPassword'
 import Submit from './pages/Submit'
 import MySubmissions from './pages/MySubmissions'
 import SubmissionDetail from './pages/SubmissionDetail'
@@ -42,6 +43,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={setUser} />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <Register onLogin={setUser} />} />
+            <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />
             <Route path="/verify-email" element={user ? <VerifyEmail user={user} onVerified={setUser} /> : <Navigate to="/login" />} />
             <Route path="/submit" element={user ? <Submit user={user} /> : <Navigate to="/login" />} />
             <Route path="/my-submissions" element={user ? <MySubmissions /> : <Navigate to="/login" />} />

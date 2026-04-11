@@ -19,18 +19,25 @@ function getSmtpConfig() {
   };
 }
 
-function buildVerificationEmail({ email, code, username }) {
+function buildVerificationEmail({ email, code, username, purpose = 'email verification' }) {
   const mailFrom = process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@clinicaltrialarena.dev';
   const appName = 'Clinical Trial Arena';
+  const isPasswordReset = purpose === 'password reset';
+  const subject = isPasswordReset
+    ? `${appName} password reset code`
+    : `${appName} email verification code`;
+  const intro = isPasswordReset
+    ? `Your ${appName} password reset code is: ${code}`
+    : `Your ${appName} verification code is: ${code}`;
 
   return {
     from: mailFrom,
     to: email,
-    subject: `${appName} email verification code`,
+    subject,
     text: [
       `Hello ${username},`,
       '',
-      `Your ${appName} verification code is: ${code}`,
+      intro,
       '',
       'This code expires in 15 minutes.',
       'If you did not request this code, you can ignore this email.'
@@ -38,7 +45,7 @@ function buildVerificationEmail({ email, code, username }) {
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
         <p>Hello ${username},</p>
-        <p>Your <strong>Clinical Trial Arena</strong> verification code is:</p>
+        <p>${isPasswordReset ? 'Your <strong>Clinical Trial Arena</strong> password reset code is:' : 'Your <strong>Clinical Trial Arena</strong> verification code is:'}</p>
         <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px;">${code}</p>
         <p>This code expires in <strong>15 minutes</strong>.</p>
         <p>If you did not request this code, you can ignore this email.</p>
@@ -47,11 +54,11 @@ function buildVerificationEmail({ email, code, username }) {
   };
 }
 
-async function sendVerificationCode({ email, code, username }) {
+async function sendVerificationCode({ email, code, username, purpose = 'email verification' }) {
   const smtpConfig = getSmtpConfig();
 
   if (!smtpConfig) {
-    console.log(`[dev-email] Verification code for ${username} <${email}>: ${code}`);
+    console.log(`[dev-email] ${purpose} code for ${username} <${email}>: ${code}`);
     return {
       delivered: false,
       mode: 'log'
@@ -59,7 +66,7 @@ async function sendVerificationCode({ email, code, username }) {
   }
 
   const transporter = nodemailer.createTransport(smtpConfig);
-  await transporter.sendMail(buildVerificationEmail({ email, code, username }));
+  await transporter.sendMail(buildVerificationEmail({ email, code, username, purpose }));
 
   return {
     delivered: true,

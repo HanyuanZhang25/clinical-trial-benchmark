@@ -118,7 +118,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
   if (missingIds.length) {
     throw validationError(
       'INVALID_SEMANTIC',
-      `Missing required question ids: ${formatIdSample(missingIds)}.`
+      `Some required question IDs are missing. Example question IDs include: ${formatIdSample(missingIds)}.`
     );
   }
 

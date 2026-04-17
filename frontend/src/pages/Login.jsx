@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
 
 function Login({ onLogin }) {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ function Login({ onLogin }) {
     setLoading(true)
 
     try {
-      const { user } = await api.login(username, password)
+      const { user } = await api.login(email, password)
       onLogin(user)
       navigate('/')
     } catch (err) {
@@ -34,8 +34,8 @@ function Login({ onLogin }) {
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Username or Email</label>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <label>Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="form-group">
             <label>Password</label>

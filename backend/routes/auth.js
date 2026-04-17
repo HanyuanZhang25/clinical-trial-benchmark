@@ -170,22 +170,22 @@ router.post(
     message: 'Too many sign-in attempts. Please try again later.'
   }),
   async (req, res) => {
-    const { username, password } = req.body;
-    const loginIdentifier = username?.trim().toLowerCase();
+    const { email, password } = req.body;
+    const loginEmail = normalizeEmail(email);
 
-    if (!loginIdentifier || !password) {
+    if (!loginEmail || !password) {
       return res.status(400).json({
         success: false,
         error_code: 'INVALID_INPUT',
-        message: 'username and password are required.'
+        message: 'Email and password are required.'
       });
     }
 
     const user = await db.get(`
       SELECT id, username, email, password, full_name, affiliation, role, email_verified, created_at
       FROM users
-      WHERE lower(trim(username)) = ? OR lower(trim(email)) = ?
-    `, [loginIdentifier, loginIdentifier]);
+      WHERE lower(trim(email)) = ?
+    `, [loginEmail]);
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
       await logAuthEvent({
@@ -193,7 +193,7 @@ router.post(
         eventType: 'signin',
         success: false,
         ipAddress: getIpAddress(req),
-        metadata: { username: loginIdentifier }
+        metadata: { email: loginEmail }
       });
       return res.status(401).json({
         success: false,

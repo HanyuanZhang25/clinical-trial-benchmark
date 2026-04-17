@@ -18,9 +18,9 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  login: (username, password) => request('/auth/signin', {
+  login: (email, password) => request('/auth/signin', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ email, password }),
   }),
   register: (payload) => request('/auth/signup', {
     method: 'POST',

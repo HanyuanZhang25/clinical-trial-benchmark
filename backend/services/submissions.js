@@ -35,6 +35,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
   const normalizedPayload = {};
   let expectedOptionCount = null;
   const illegalOptionIds = [];
+  const emptyOptionIds = [];
 
   for (const [rawQuestionId, rawValue] of submittedEntries) {
     const normalizedProblemId = Number(rawQuestionId);
@@ -49,7 +50,8 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     }
 
     if (rawValue.length === 0) {
-      throw validationError('INVALID_SEMANTIC', 'The option list must contain at least one element.');
+      emptyOptionIds.push(normalizedProblemId);
+      continue;
     }
 
     if (expectedOptionCount === null) {
@@ -93,6 +95,13 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     throw validationError(
       'INVALID_SEMANTIC',
       `Some options are invalid. Example question IDs include: ${formatIdSample(illegalOptionIds)}.`
+    );
+  }
+
+  if (emptyOptionIds.length) {
+    throw validationError(
+      'INVALID_SEMANTIC',
+      `Some option lists are empty. Example question IDs include: ${formatIdSample(emptyOptionIds)}.`
     );
   }
 

@@ -14,7 +14,7 @@ function formatIdSample(ids) {
 
 async function validateSubmissionPayload({ benchmark, payload }) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    throw validationError('INVALID_SCHEMA', 'The submission must be a JSON object: each key is a question id and each value is an option list.');
+    throw validationError('INVALID_SCHEMA', 'The submission must be a JSON object (dictionary format): each key is a question id and each value is an option list.');
   }
 
   const manifest = await getManifestForBenchmark(benchmark.id);

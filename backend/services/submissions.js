@@ -35,6 +35,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
   const normalizedPayload = {};
   let expectedOptionCount = null;
   const illegalOptionIds = [];
+  const nonListValueIds = [];
   const emptyOptionIds = [];
 
   for (const [rawQuestionId, rawValue] of submittedEntries) {
@@ -46,7 +47,8 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     }
 
     if (!Array.isArray(rawValue)) {
-      throw validationError('INVALID_SCHEMA', 'Each value must be a list of options.');
+      nonListValueIds.push(normalizedProblemId);
+      continue;
     }
 
     if (rawValue.length === 0) {
@@ -95,6 +97,13 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     throw validationError(
       'INVALID_SEMANTIC',
       `Some options are invalid. Example question IDs include: ${formatIdSample(illegalOptionIds)}.`
+    );
+  }
+
+  if (nonListValueIds.length) {
+    throw validationError(
+      'INVALID_SCHEMA',
+      `Some values are not option lists. Example question IDs include: ${formatIdSample(nonListValueIds)}.`
     );
   }
 

@@ -85,7 +85,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
   if (invalidQuestionIds.length) {
     throw validationError(
       'INVALID_SEMANTIC',
-      `Some question ids are invalid: ${formatIdSample(invalidQuestionIds)}.`
+      `Some question IDs are invalid. Example question IDs include: ${formatIdSample(invalidQuestionIds)}.`
     );
   }
 

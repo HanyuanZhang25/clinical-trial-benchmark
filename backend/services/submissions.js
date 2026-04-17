@@ -14,7 +14,7 @@ function formatIdSample(ids) {
 
 async function validateSubmissionPayload({ benchmark, payload }) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    throw validationError('INVALID_SCHEMA', 'It should be a dict, the key is question, the value is your option list.');
+    throw validationError('INVALID_SCHEMA', 'The submission must be a JSON object: each key is a question id and each value is an option list.');
   }
 
   const manifest = await getManifestForBenchmark(benchmark.id);
@@ -45,7 +45,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     }
 
     if (!Array.isArray(rawValue)) {
-      throw validationError('INVALID_SCHEMA', 'The value\'s format should be list, and fill the option in it.');
+      throw validationError('INVALID_SCHEMA', 'Each value must be a list of options.');
     }
 
     if (rawValue.length === 0) {
@@ -55,7 +55,7 @@ async function validateSubmissionPayload({ benchmark, payload }) {
     if (expectedOptionCount === null) {
       expectedOptionCount = rawValue.length;
     } else if (rawValue.length !== expectedOptionCount) {
-      throw validationError('INVALID_SEMANTIC', 'The option\'s size is not same, please unify it.');
+      throw validationError('INVALID_SEMANTIC', 'All option lists must have the same length.');
     }
 
     const allowedOptions = validQuestions.get(normalizedProblemId) === 'non-inferiority'
@@ -85,14 +85,14 @@ async function validateSubmissionPayload({ benchmark, payload }) {
   if (invalidQuestionIds.length) {
     throw validationError(
       'INVALID_SEMANTIC',
-      `Some question ids are wrong: ${formatIdSample(invalidQuestionIds)}.`
+      `Some question ids are invalid: ${formatIdSample(invalidQuestionIds)}.`
     );
   }
 
   if (illegalOptionIds.length) {
     throw validationError(
       'INVALID_SEMANTIC',
-      `Some element's option is illegal. Relevant question ids: ${formatIdSample(illegalOptionIds)}.`
+      `Some options are invalid. Relevant question ids: ${formatIdSample(illegalOptionIds)}.`
     );
   }
 

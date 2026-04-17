@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
 
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 function Register({ onLogin }) {
   const [form, setForm] = useState({
     username: '',
@@ -14,6 +18,14 @@ function Register({ onLogin }) {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
+  const usernameError = form.username.length > 50 ? 'Username must be 50 characters or fewer.' : null
+  const passwordError = form.password && (form.password.length < 6 || form.password.length > 16)
+    ? 'Password must be between 6 and 16 characters.'
+    : null
+  const emailError = form.email && !isValidEmail(form.email)
+    ? 'Please enter a valid email address.'
+    : null
+
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
@@ -21,6 +33,12 @@ function Register({ onLogin }) {
   async function handleSubmit(event) {
     event.preventDefault()
     setError(null)
+
+    if (usernameError || passwordError || emailError) {
+      setError(usernameError || passwordError || emailError)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -44,15 +62,18 @@ function Register({ onLogin }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
-            <input value={form.username} onChange={(e) => update('username', e.target.value)} required />
+            <input value={form.username} onChange={(e) => update('username', e.target.value)} maxLength={50} required />
+            {usernameError && <small className="form-hint error-text">{usernameError}</small>}
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} minLength={8} required />
+            <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} minLength={6} maxLength={16} required />
+            {passwordError && <small className="form-hint error-text">{passwordError}</small>}
           </div>
           <div className="form-group">
             <label>Email</label>
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
+            {emailError && <small className="form-hint error-text">{emailError}</small>}
           </div>
           <div className="form-group">
             <label>Full Name</label>

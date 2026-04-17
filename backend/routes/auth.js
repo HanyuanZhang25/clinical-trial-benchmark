@@ -34,6 +34,10 @@ function normalizeEmail(value = '') {
   return value.trim().toLowerCase();
 }
 
+function isValidEmail(value = '') {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 async function getLatestVerification(userId) {
   return db.get(`
     SELECT id, created_at
@@ -87,11 +91,27 @@ router.post(
       });
     }
 
-    if (password.length < 8) {
+    if (normalizedUsername.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_USERNAME',
+        message: 'Username must be 50 characters or fewer.'
+      });
+    }
+
+    if (password.length < 6 || password.length > 16) {
       return res.status(400).json({
         success: false,
         error_code: 'WEAK_PASSWORD',
-        message: 'Password must be at least 8 characters.'
+        message: 'Password must be between 6 and 16 characters.'
+      });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_EMAIL',
+        message: 'Please enter a valid email address.'
       });
     }
 

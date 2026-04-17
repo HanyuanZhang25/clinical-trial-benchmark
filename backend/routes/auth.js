@@ -387,11 +387,11 @@ router.post(
       });
     }
 
-    if (password.length < 8) {
+    if (password.length < 6 || password.length > 16) {
       return res.status(400).json({
         success: false,
         error_code: 'WEAK_PASSWORD',
-        message: 'Password must be at least 8 characters.'
+        message: 'Password must be between 6 and 16 characters.'
       });
     }
 

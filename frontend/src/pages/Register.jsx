@@ -22,6 +22,9 @@ function Register({ onLogin }) {
   const passwordError = form.password && (form.password.length < 6 || form.password.length > 16)
     ? 'Password must be between 6 and 16 characters.'
     : null
+  const emailLengthError = form.email.length > 100
+    ? 'Email has reached the maximum length of 100 characters.'
+    : null
   const emailError = form.email && !isValidEmail(form.email)
     ? 'Please enter a valid email address.'
     : null
@@ -34,8 +37,8 @@ function Register({ onLogin }) {
     event.preventDefault()
     setError(null)
 
-    if (usernameError || passwordError || emailError) {
-      setError(usernameError || passwordError || emailError)
+    if (usernameError || passwordError || emailLengthError || emailError) {
+      setError(usernameError || passwordError || emailLengthError || emailError)
       return
     }
 
@@ -62,17 +65,18 @@ function Register({ onLogin }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
-            <input value={form.username} onChange={(e) => update('username', e.target.value)} maxLength={50} required />
+            <input value={form.username} onChange={(e) => update('username', e.target.value)} required />
             {usernameError && <small className="form-hint error-text">{usernameError}</small>}
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} minLength={6} maxLength={16} required />
+            <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} minLength={6} required />
             {passwordError && <small className="form-hint error-text">{passwordError}</small>}
           </div>
           <div className="form-group">
             <label>Email</label>
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
+            {emailLengthError && <small className="form-hint error-text">{emailLengthError}</small>}
             {emailError && <small className="form-hint error-text">{emailError}</small>}
           </div>
           <div className="form-group">

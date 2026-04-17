@@ -115,6 +115,14 @@ router.post(
       });
     }
 
+    if (normalizedEmail.length > 100) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'EMAIL_TOO_LONG',
+        message: 'Email must be 100 characters or fewer.'
+      });
+    }
+
     const existing = await db.get(`
       SELECT id
       FROM users

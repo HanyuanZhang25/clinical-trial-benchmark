@@ -579,6 +579,12 @@ tbody tr:hover {
   background: white;
 }
 
+.form-hint.error-text {
+  color: var(--error);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .form-group textarea {
   min-height: 280px;
   resize: vertical;

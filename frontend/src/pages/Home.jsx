@@ -7,11 +7,11 @@ function formatMetric(value, digits = 2) {
   return typeof value === 'number' ? value.toFixed(digits) : '-'
 }
 
-function formatLongCountdown(dateString) {
+function formatLongCountdown(dateString, currentTime = Date.now()) {
   const target = Date.parse(dateString)
   if (Number.isNaN(target)) return ''
 
-  const diff = target - Date.now()
+  const diff = target - currentTime
   if (diff <= 0) return '00 weeks 00 days 00:00:00'
 
   const totalSeconds = Math.floor(diff / 1000)
@@ -250,6 +250,15 @@ function Home({ user }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 1000)
+
+    return () => clearInterval(intervalId)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -358,7 +367,7 @@ function Home({ user }) {
                       <div>{row.deadline}</div>
                       {row.isLive && row.deadlineDate && (
                         <small className="schedule-countdown">
-                          {formatLongCountdown(row.deadlineDate)}
+                          {formatLongCountdown(row.deadlineDate, currentTime)}
                         </small>
                       )}
                     </td>

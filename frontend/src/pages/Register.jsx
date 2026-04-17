@@ -19,6 +19,10 @@ function Register({ onLogin }) {
   const navigate = useNavigate()
 
   const usernameError = form.username.length > 50 ? 'Username must be 50 characters or fewer.' : null
+  const fullNameError = form.full_name.length > 50 ? 'Full name must be 50 characters or fewer.' : null
+  const affiliationError = form.affiliation.length > 100
+    ? 'Company or university name must be 100 characters or fewer.'
+    : null
   const passwordError = form.password && (form.password.length < 6 || form.password.length > 16)
     ? 'Password must be between 6 and 16 characters.'
     : null
@@ -37,8 +41,8 @@ function Register({ onLogin }) {
     event.preventDefault()
     setError(null)
 
-    if (usernameError || passwordError || emailLengthError || emailError) {
-      setError(usernameError || passwordError || emailLengthError || emailError)
+    if (usernameError || fullNameError || affiliationError || passwordError || emailLengthError || emailError) {
+      setError(usernameError || fullNameError || affiliationError || passwordError || emailLengthError || emailError)
       return
     }
 
@@ -82,10 +86,12 @@ function Register({ onLogin }) {
           <div className="form-group">
             <label>Full Name</label>
             <input value={form.full_name} onChange={(e) => update('full_name', e.target.value)} required />
+            {fullNameError && <small className="form-hint error-text">{fullNameError}</small>}
           </div>
           <div className="form-group">
             <label>Company or University Name</label>
             <input value={form.affiliation} onChange={(e) => update('affiliation', e.target.value)} required />
+            {affiliationError && <small className="form-hint error-text">{affiliationError}</small>}
           </div>
           <button type="submit" className="btn btn-primary full-width" disabled={loading}>
             {loading ? 'Creating account...' : 'Create Account'}

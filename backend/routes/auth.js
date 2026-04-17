@@ -99,6 +99,22 @@ router.post(
       });
     }
 
+    if (normalizedFullName.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_FULL_NAME',
+        message: 'Full name must be 50 characters or fewer.'
+      });
+    }
+
+    if (normalizedAffiliation.length > 100) {
+      return res.status(400).json({
+        success: false,
+        error_code: 'INVALID_AFFILIATION',
+        message: 'Company or university name must be 100 characters or fewer.'
+      });
+    }
+
     if (password.length < 6 || password.length > 16) {
       return res.status(400).json({
         success: false,

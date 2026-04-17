@@ -42,7 +42,7 @@ function VerifyEmail({ user, onVerified }) {
         <p className="eyebrow">Email Verification</p>
         <h1 className="page-title">Verify {user.email}</h1>
         <p className="page-subtitle">
-          In this MVP, verification codes are logged to the backend development console instead of being emailed.
+          Enter the verification code sent to your email address.
         </p>
         {error && <div className="alert alert-error">{error}</div>}
         {message && <div className="alert alert-success">{message}</div>}

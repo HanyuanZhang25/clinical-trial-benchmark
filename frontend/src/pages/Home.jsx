@@ -197,7 +197,7 @@ function OpenBenchmarkPanel({ benchmark, user }) {
 
   return (
     <div className="open-benchmark-panel">
-      <p className="eyebrow">Actively Looking for Submissions, Deadline to submit is {deadlineLabel}</p>
+      <p className="eyebrow">Actively accepting submissions. The submission deadline is {deadlineLabel}.</p>
       <h2>{benchmark.display_name}</h2>
       <p>
         We are actively seeking submissions for {benchmark.display_name}.

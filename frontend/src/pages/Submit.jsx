@@ -75,7 +75,7 @@ function Submit({ user }) {
       await api.submit({
         payload,
       })
-      setSuccess('Submission received. It has been stored as pending results.')
+      setSuccess('Submission received successfully.')
       setTimeout(() => navigate('/my-submissions'), 1200)
     } catch (err) {
       setError(err.message)
@@ -126,10 +126,10 @@ function Submit({ user }) {
           <div className="form-group">
             <label>JSON Formatting Rules</label>
             <div className="card prose-card">
-              <p>Upload a UTF-8 encoded JSON file, other format is not acceptable.</p>
+              <p>Upload a UTF-8 encoded JSON file. Other formats are not accepted.</p>
               <p>
-                You can download the benchmark by click “Download Benchmark Questions” button.
-                You can also download the Auxiliary Information to supply additional information.
+                You can download the benchmark by clicking the "Download Benchmark Questions" button.
+                You can also download the Auxiliary Information to provide additional context.
               </p>
               <p>Accepted format:</p>
               <pre className="code-block">{`{

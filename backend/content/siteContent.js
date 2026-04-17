@@ -25,9 +25,9 @@ module.exports = {
     title: 'About CT Open',
     paragraphs: [
       'Scientists have long sought to accurately predict outcomes of real-world events before they happen. Can AI systems do so more reliably? We study this question through clinical trial outcome prediction, a high-stakes open challenge even for domain experts, with immediate consequences for patients, pharmaceutical companies, and investors.',
-      'We introduce CT Open, an open-access, live platform that would run four challenge-cycles every year. Anyone can submit predictions for clinical trial outcomes in each challenge-cycle. In the next cycle, CT Open evaluates those submissions on trials whose outcomes were not yet public at the submission deadline but became public afterwards.',
+      'We introduce CT Open, an open-access live platform that runs four challenge cycles every year. Anyone can submit predictions for clinical trial outcomes in each challenge cycle. In the next cycle, CT Open evaluates those submissions on trials whose outcomes were not yet public at the submission deadline but became public afterward.',
       'Determining if a trial\'s outcome is public on the internet before a certain date is surprisingly difficult. Outcomes posted on official registries may lag behind years, while the first mention may appear in obscure news articles. To address this, we propose a novel, fully automated pipeline that uses iterative LLM-powered web search to identify the earliest mention of trial outcomes.',
-      'We validate the pipeline’s quality and accuracy by human expert\'s annotations. Since CT Open’s pipeline ensures that every evaluated trial had no publicly reported outcome when the prediction was made, it allows participants to use any methodology and any data source.',
+      'We validate the pipeline\'s quality and accuracy using human expert annotations. Since CT Open\'s pipeline ensures that every evaluated trial had no publicly reported outcome when the prediction was made, it allows participants to use any methodology and any data source.',
       'In this paper, we release a large-scale training set and two time-stamped test benchmarks, Winter25 and Summer25. We present promising results showing that retrieval-augmented and agentic LLMs outperform baseline methods. We believe CT Open can serve as a central hub for advancing AI research on forecasting real-world outcomes before they occur, while also informing biomedical research and improving clinical trial design.'
     ],
     links: [
@@ -45,20 +45,16 @@ module.exports = {
       answer: 'Cross Entropy measures how well a model assigns probability mass to the correct label. Lower values are better. In Clinical Trial Arena, we display it next to F1 so the leaderboard captures both discrete prediction quality and confidence calibration.'
     },
     {
-      question: 'How is the cost calculated?',
-      answer: 'Cost is reported by submitters as the total benchmark inference cost for the uploaded run. The MVP stores the submitted numeric value directly so teams can compare accuracy-quality tradeoffs alongside benchmark metrics.'
-    },
-    {
       question: 'Why are some benchmarks open for submission but do not yet show results?',
       answer: 'Open benchmarks intentionally hide the final leaderboard until the submission window closes and ground-truth answers are ready to publish. This prevents leakage and ensures everyone is evaluated against the same final answer key.'
     },
     {
       question: 'How do you validate a submission file?',
-      answer: 'Each uploaded JSON is validated in layers: authenticated request checks, JSON parsing, schema validation, and semantic validation against the canonical benchmark manifest. The server rejects duplicate problem IDs, missing required problems, unknown IDs, and invalid cost values.'
+      answer: 'Each uploaded JSON is validated in layers: authenticated request checks, JSON parsing, schema validation, and semantic validation against the canonical benchmark manifest. The server rejects missing required problems, unknown IDs, invalid option formats, and invalid options.'
     },
     {
       question: 'What should the submission JSON look like?',
-      answer: 'The MVP expects a JSON object with benchmark_version, answers, and total_cost. answers must be a list of objects that each include problem_id and answer. The benchmark version is human-readable, but the backend resolves it to a stable benchmark record internally.'
+      answer: 'The platform expects a JSON object where each key is a question ID and each value is a non-empty option list. All option lists must have the same length. Non-inferiority questions allow a, b, and c, while other questions allow only a and b.'
     },
     {
       question: 'Can I submit multiple times?',
@@ -74,7 +70,7 @@ module.exports = {
     },
     {
       question: 'When will the 26/06 Benchmark leaderboard be published?',
-      answer: 'The 26/06 Benchmark leaderboard appears after the submission window closes and results are published according to its benchmark schedule. Until then, the tab remains submission-focused and your uploads are stored as pending results.'
+      answer: 'The 26/06 Benchmark leaderboard appears after the submission window closes and results are published according to its benchmark schedule. Until then, the tab remains submission-focused and your latest valid upload is kept as your active submission.'
     }
   ]
-};
+}

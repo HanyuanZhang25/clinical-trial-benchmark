@@ -363,7 +363,7 @@ const benchmarkSeeds = [
     state: 'open_for_submission',
     submission_open_at: '2026-01-01T00:00:00Z',
     submission_close_at: '2026-05-31T23:59:59Z',
-    result_publish_at: '2026-07-20T00:00:00Z',
+    result_publish_at: '2026-09-07T00:00:00Z',
     download_file_path: benchmarkAssetPath('download_26_06.json', { useGcsInProduction: true }),
     manifest_file_path: benchmarkAssetPath('manifest_26_06.json', { useGcsInProduction: true }),
     has_ground_truth: 0,

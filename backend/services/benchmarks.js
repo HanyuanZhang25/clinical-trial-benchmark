@@ -94,23 +94,23 @@ async function getLeaderboard(benchmarkIdOrSlug) {
 
   const useHistoricalReportOrder = ['25-02', '25-09'].includes(benchmark.slug);
   const averageMacroF1Expr = `(
-    COALESCE(endpoint_macro_f1, endpoint_prediction_f1) +
-    COALESCE(superiority_macro_f1, arm2arm_superiority_f1) +
-    COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1)
+    endpoint_macro_f1 +
+    superiority_macro_f1 +
+    comparative_effect_macro_f1
   ) / 3.0`;
   const averageBalancedAccuracyExpr = `(
-    COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy) +
-    COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy) +
-    COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy)
+    endpoint_balanced_accuracy +
+    superiority_balanced_accuracy +
+    comparative_effect_balanced_accuracy
   ) / 3.0`;
   const rows = await db.all(`
     SELECT display_username, model_name,
-      COALESCE(endpoint_macro_f1, endpoint_prediction_f1) AS endpoint_macro_f1,
-      COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy) AS endpoint_balanced_accuracy,
-      COALESCE(superiority_macro_f1, arm2arm_superiority_f1) AS superiority_macro_f1,
-      COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy) AS superiority_balanced_accuracy,
-      COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1) AS comparative_effect_macro_f1,
-      COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy) AS comparative_effect_balanced_accuracy,
+      endpoint_macro_f1,
+      endpoint_balanced_accuracy,
+      superiority_macro_f1,
+      superiority_balanced_accuracy,
+      comparative_effect_macro_f1,
+      comparative_effect_balanced_accuracy,
       published_at
     FROM submission_evaluations
     WHERE benchmark_id = ? AND is_public = 1 AND status = 'published'

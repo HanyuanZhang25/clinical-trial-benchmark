@@ -12,10 +12,6 @@ function formatIdSample(ids) {
   return ids.slice(0, 5).join(', ');
 }
 
-function coalesceMetric(primary, legacy) {
-  return primary ?? legacy ?? null;
-}
-
 function averageMetric(values) {
   const numericValues = values.filter((value) => typeof value === 'number');
   if (!numericValues.length) return null;
@@ -225,9 +221,6 @@ async function listAllSubmissions() {
       e.endpoint_macro_f1, e.endpoint_balanced_accuracy,
       e.superiority_macro_f1, e.superiority_balanced_accuracy,
       e.comparative_effect_macro_f1, e.comparative_effect_balanced_accuracy,
-      e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy,
-      e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
-      e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
       e.is_public
     FROM submissions s
     JOIN users u ON u.id = s.user_id
@@ -247,12 +240,12 @@ async function listAllSubmissions() {
   `);
 
   return rows.map((row) => {
-    const endpointMacroF1 = coalesceMetric(row.endpoint_macro_f1, row.endpoint_prediction_f1);
-    const endpointBalancedAccuracy = coalesceMetric(row.endpoint_balanced_accuracy, row.endpoint_prediction_cross_entropy);
-    const superiorityMacroF1 = coalesceMetric(row.superiority_macro_f1, row.arm2arm_superiority_f1);
-    const superiorityBalancedAccuracy = coalesceMetric(row.superiority_balanced_accuracy, row.arm2arm_superiority_cross_entropy);
-    const comparativeEffectMacroF1 = coalesceMetric(row.comparative_effect_macro_f1, row.arm2arm_noninferiority_f1);
-    const comparativeEffectBalancedAccuracy = coalesceMetric(row.comparative_effect_balanced_accuracy, row.arm2arm_noninferiority_cross_entropy);
+    const endpointMacroF1 = row.endpoint_macro_f1 ?? null;
+    const endpointBalancedAccuracy = row.endpoint_balanced_accuracy ?? null;
+    const superiorityMacroF1 = row.superiority_macro_f1 ?? null;
+    const superiorityBalancedAccuracy = row.superiority_balanced_accuracy ?? null;
+    const comparativeEffectMacroF1 = row.comparative_effect_macro_f1 ?? null;
+    const comparativeEffectBalancedAccuracy = row.comparative_effect_balanced_accuracy ?? null;
 
     return {
     id: row.id,
@@ -279,9 +272,6 @@ async function getSubmissionDetail(submissionId, user) {
       e.endpoint_macro_f1, e.endpoint_balanced_accuracy,
       e.superiority_macro_f1, e.superiority_balanced_accuracy,
       e.comparative_effect_macro_f1, e.comparative_effect_balanced_accuracy,
-      e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy,
-      e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
-      e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
       e.is_public
     FROM submissions s
     JOIN benchmarks b ON b.id = s.benchmark_id
@@ -297,12 +287,12 @@ async function getSubmissionDetail(submissionId, user) {
     throw validationError('FORBIDDEN', 'Access denied.', 403);
   }
 
-  const endpointMacroF1 = coalesceMetric(row.endpoint_macro_f1, row.endpoint_prediction_f1);
-  const endpointBalancedAccuracy = coalesceMetric(row.endpoint_balanced_accuracy, row.endpoint_prediction_cross_entropy);
-  const superiorityMacroF1 = coalesceMetric(row.superiority_macro_f1, row.arm2arm_superiority_f1);
-  const superiorityBalancedAccuracy = coalesceMetric(row.superiority_balanced_accuracy, row.arm2arm_superiority_cross_entropy);
-  const comparativeEffectMacroF1 = coalesceMetric(row.comparative_effect_macro_f1, row.arm2arm_noninferiority_f1);
-  const comparativeEffectBalancedAccuracy = coalesceMetric(row.comparative_effect_balanced_accuracy, row.arm2arm_noninferiority_cross_entropy);
+  const endpointMacroF1 = row.endpoint_macro_f1 ?? null;
+  const endpointBalancedAccuracy = row.endpoint_balanced_accuracy ?? null;
+  const superiorityMacroF1 = row.superiority_macro_f1 ?? null;
+  const superiorityBalancedAccuracy = row.superiority_balanced_accuracy ?? null;
+  const comparativeEffectMacroF1 = row.comparative_effect_macro_f1 ?? null;
+  const comparativeEffectBalancedAccuracy = row.comparative_effect_balanced_accuracy ?? null;
 
   return {
     id: row.id,

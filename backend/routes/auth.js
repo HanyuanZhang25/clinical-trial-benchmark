@@ -38,14 +38,14 @@ function isValidEmail(value = '') {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-async function getLatestVerification(userId) {
+async function getLatestVerification(userId, purpose = 'signup') {
   return db.get(`
     SELECT id, created_at
     FROM email_verifications
-    WHERE user_id = ? AND purpose = 'signup'
+    WHERE user_id = ? AND purpose = ?
     ORDER BY created_at DESC
     LIMIT 1
-  `, [userId]);
+  `, [userId, purpose]);
 }
 
 async function createVerification(user, purpose = 'signup') {
@@ -268,6 +268,15 @@ router.post(
     `, [normalizedEmail]);
 
     if (user) {
+      const latestVerification = await getLatestVerification(user.id, 'password_reset');
+      if (latestVerification && (Date.now() - Date.parse(latestVerification.created_at)) < 5 * 60 * 1000) {
+        return res.status(429).json({
+          success: false,
+          error_code: 'VERIFICATION_COOLDOWN',
+          message: 'You can request a new verification code once every 5 minutes.'
+        });
+      }
+
       try {
         await createVerification(user, 'password_reset');
         await logAuthEvent({ userId: user.id, eventType: 'password_reset_request', success: true, ipAddress: getIpAddress(req) });
@@ -508,7 +517,7 @@ router.post(
       });
     }
 
-    const latestVerification = await getLatestVerification(req.user.id);
+    const latestVerification = await getLatestVerification(req.user.id, 'signup');
     if (latestVerification && (Date.now() - Date.parse(latestVerification.created_at)) < 5 * 60 * 1000) {
       return res.status(429).json({
         success: false,

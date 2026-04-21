@@ -12,6 +12,16 @@ function formatIdSample(ids) {
   return ids.slice(0, 5).join(', ');
 }
 
+function coalesceMetric(primary, legacy) {
+  return primary ?? legacy ?? null;
+}
+
+function averageMetric(values) {
+  const numericValues = values.filter((value) => typeof value === 'number');
+  if (!numericValues.length) return null;
+  return numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+}
+
 async function validateSubmissionPayload({ benchmark, payload }) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw validationError('INVALID_SCHEMA', 'The submission must be a JSON object (dictionary format): each key is a question id and each value is an option list.');
@@ -173,9 +183,9 @@ async function createSubmission({ user, payload }) {
 
   await db.insert(`
     INSERT INTO submission_evaluations (
-      submission_id, benchmark_id, display_username, model_name, cost, status, is_public
-    ) VALUES (?, ?, ?, ?, ?, 'pending_results', 0)
-  `, [result.lastInsertRowid, benchmark.id, user.username, user.username, 0]);
+      submission_id, benchmark_id, display_username, model_name, status, is_public
+    ) VALUES (?, ?, ?, ?, 'pending_results', 0)
+  `, [result.lastInsertRowid, benchmark.id, user.username, user.username]);
 
   return {
     id: result.lastInsertRowid,
@@ -211,8 +221,14 @@ async function listUserSubmissions(userId) {
 async function listAllSubmissions() {
   const rows = await db.all(`
     SELECT s.id, s.user_id, u.username, u.email, s.model_name, s.benchmark_version,
-      s.status, s.submitted_at, b.display_name, b.slug, e.average_f1_macro,
-      e.average_cross_entropy, e.is_public
+      s.status, s.submitted_at, b.display_name, b.slug,
+      e.endpoint_macro_f1, e.endpoint_balanced_accuracy,
+      e.superiority_macro_f1, e.superiority_balanced_accuracy,
+      e.comparative_effect_macro_f1, e.comparative_effect_balanced_accuracy,
+      e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy,
+      e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
+      e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
+      e.is_public
     FROM submissions s
     JOIN users u ON u.id = s.user_id
     JOIN benchmarks b ON b.id = s.benchmark_id
@@ -230,7 +246,15 @@ async function listAllSubmissions() {
     ORDER BY s.submitted_at DESC
   `);
 
-  return rows.map((row) => ({
+  return rows.map((row) => {
+    const endpointMacroF1 = coalesceMetric(row.endpoint_macro_f1, row.endpoint_prediction_f1);
+    const endpointBalancedAccuracy = coalesceMetric(row.endpoint_balanced_accuracy, row.endpoint_prediction_cross_entropy);
+    const superiorityMacroF1 = coalesceMetric(row.superiority_macro_f1, row.arm2arm_superiority_f1);
+    const superiorityBalancedAccuracy = coalesceMetric(row.superiority_balanced_accuracy, row.arm2arm_superiority_cross_entropy);
+    const comparativeEffectMacroF1 = coalesceMetric(row.comparative_effect_macro_f1, row.arm2arm_noninferiority_f1);
+    const comparativeEffectBalancedAccuracy = coalesceMetric(row.comparative_effect_balanced_accuracy, row.arm2arm_noninferiority_cross_entropy);
+
+    return {
     id: row.id,
     user_id: row.user_id,
     username: row.username,
@@ -240,20 +264,25 @@ async function listAllSubmissions() {
     benchmark_slug: row.slug,
     benchmark_version: row.benchmark_version,
     status: row.status,
-    average_f1_macro: row.average_f1_macro,
-    average_cross_entropy: row.average_cross_entropy,
+    average_f1_macro: averageMetric([endpointMacroF1, superiorityMacroF1, comparativeEffectMacroF1]),
+    average_balanced_accuracy: averageMetric([endpointBalancedAccuracy, superiorityBalancedAccuracy, comparativeEffectBalancedAccuracy]),
     results_published: !!row.is_public,
     submitted_at: row.submitted_at
-  }));
+    };
+  });
 }
 
 async function getSubmissionDetail(submissionId, user) {
   const row = await db.get(`
     SELECT s.id, s.user_id, s.model_name, s.benchmark_version, s.status, s.submitted_at,
-      s.raw_payload, s.validation_summary, b.display_name, b.slug, e.average_f1_macro, e.average_cross_entropy,
+      s.raw_payload, s.validation_summary, b.display_name, b.slug,
+      e.endpoint_macro_f1, e.endpoint_balanced_accuracy,
+      e.superiority_macro_f1, e.superiority_balanced_accuracy,
+      e.comparative_effect_macro_f1, e.comparative_effect_balanced_accuracy,
+      e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy,
       e.arm2arm_superiority_f1, e.arm2arm_superiority_cross_entropy,
       e.arm2arm_noninferiority_f1, e.arm2arm_noninferiority_cross_entropy,
-      e.endpoint_prediction_f1, e.endpoint_prediction_cross_entropy, e.is_public
+      e.is_public
     FROM submissions s
     JOIN benchmarks b ON b.id = s.benchmark_id
     LEFT JOIN submission_evaluations e ON e.submission_id = s.id
@@ -268,6 +297,13 @@ async function getSubmissionDetail(submissionId, user) {
     throw validationError('FORBIDDEN', 'Access denied.', 403);
   }
 
+  const endpointMacroF1 = coalesceMetric(row.endpoint_macro_f1, row.endpoint_prediction_f1);
+  const endpointBalancedAccuracy = coalesceMetric(row.endpoint_balanced_accuracy, row.endpoint_prediction_cross_entropy);
+  const superiorityMacroF1 = coalesceMetric(row.superiority_macro_f1, row.arm2arm_superiority_f1);
+  const superiorityBalancedAccuracy = coalesceMetric(row.superiority_balanced_accuracy, row.arm2arm_superiority_cross_entropy);
+  const comparativeEffectMacroF1 = coalesceMetric(row.comparative_effect_macro_f1, row.arm2arm_noninferiority_f1);
+  const comparativeEffectBalancedAccuracy = coalesceMetric(row.comparative_effect_balanced_accuracy, row.arm2arm_noninferiority_cross_entropy);
+
   return {
     id: row.id,
     model_name: row.model_name,
@@ -279,14 +315,14 @@ async function getSubmissionDetail(submissionId, user) {
     raw_payload: row.raw_payload ? JSON.parse(row.raw_payload) : null,
     validation_summary: row.validation_summary ? JSON.parse(row.validation_summary) : null,
     evaluation: {
-      average_f1_macro: row.average_f1_macro,
-      average_cross_entropy: row.average_cross_entropy,
-      arm2arm_superiority_f1: row.arm2arm_superiority_f1,
-      arm2arm_superiority_cross_entropy: row.arm2arm_superiority_cross_entropy,
-      arm2arm_noninferiority_f1: row.arm2arm_noninferiority_f1,
-      arm2arm_noninferiority_cross_entropy: row.arm2arm_noninferiority_cross_entropy,
-      endpoint_prediction_f1: row.endpoint_prediction_f1,
-      endpoint_prediction_cross_entropy: row.endpoint_prediction_cross_entropy,
+      average_f1_macro: averageMetric([endpointMacroF1, superiorityMacroF1, comparativeEffectMacroF1]),
+      average_balanced_accuracy: averageMetric([endpointBalancedAccuracy, superiorityBalancedAccuracy, comparativeEffectBalancedAccuracy]),
+      endpoint_macro_f1: endpointMacroF1,
+      endpoint_balanced_accuracy: endpointBalancedAccuracy,
+      superiority_macro_f1: superiorityMacroF1,
+      superiority_balanced_accuracy: superiorityBalancedAccuracy,
+      comparative_effect_macro_f1: comparativeEffectMacroF1,
+      comparative_effect_balanced_accuracy: comparativeEffectBalancedAccuracy,
       is_public: !!row.is_public
     }
   };

@@ -37,12 +37,12 @@ module.exports = {
   },
   faq: [
     {
-      question: 'How exactly do you compute Average F1 Macro?',
-      answer: 'Average F1 Macro is computed by calculating F1 for each benchmark subtask category independently and then averaging those category scores with equal weight. This avoids over-rewarding categories with more rows and keeps the headline score comparable across benchmark releases.'
+      question: 'How are the leaderboard metrics organized?',
+      answer: 'CT Open reports results separately for three question categories: Endpoint, Superiority, and Comparative Effect. For each category, the leaderboard shows Macro-F1 and Balanced Accuracy so participants can compare performance across the different prediction tasks.'
     },
     {
-      question: 'What does Cross Entropy mean in this table?',
-      answer: 'Cross Entropy measures how well a model assigns probability mass to the correct label. Lower values are better. In Clinical Trial Arena, we display it next to F1 so the leaderboard captures both discrete prediction quality and confidence calibration.'
+      question: 'What does Balanced Accuracy mean in this table?',
+      answer: 'Balanced Accuracy is the average of a model\'s accuracy on the positive class and its accuracy on the negative class. It is useful when the class distribution is imbalanced because it prevents the larger class from dominating the score.'
     },
     {
       question: 'Why are some benchmarks open for submission but do not yet show results?',
@@ -66,7 +66,7 @@ module.exports = {
     },
     {
       question: 'How can I contact the team?',
-      answer: 'For the MVP, use the placeholder contact workflow referenced in the site footer or report link. In a production deployment, this would typically route through a monitored team email alias or support form.'
+      answer: 'Please use the Contact page on the website to reach the team.'
     },
     {
       question: 'When will the 26/06 Benchmark leaderboard be published?',

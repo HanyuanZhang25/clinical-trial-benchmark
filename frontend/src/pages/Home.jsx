@@ -75,24 +75,24 @@ const METRIC_GROUPS = [
     key: 'endpoint',
     label: 'Endpoint',
     columns: [
-      { key: 'endpoint_prediction_f1', label: 'Macro-F1' },
-      { key: 'endpoint_prediction_cross_entropy', label: 'Balanced Accuracy' },
+      { key: 'endpoint_macro_f1', label: 'Macro-F1' },
+      { key: 'endpoint_balanced_accuracy', label: 'Balanced Accuracy' },
     ],
   },
   {
     key: 'superiority',
     label: 'Superiority',
     columns: [
-      { key: 'arm2arm_superiority_f1', label: 'Macro-F1' },
-      { key: 'arm2arm_superiority_cross_entropy', label: 'Balanced Accuracy' },
+      { key: 'superiority_macro_f1', label: 'Macro-F1' },
+      { key: 'superiority_balanced_accuracy', label: 'Balanced Accuracy' },
     ],
   },
   {
     key: 'comparative_effect',
     label: 'Comparative Effect',
     columns: [
-      { key: 'arm2arm_noninferiority_f1', label: 'Macro-F1' },
-      { key: 'arm2arm_noninferiority_cross_entropy', label: 'Balanced Accuracy' },
+      { key: 'comparative_effect_macro_f1', label: 'Macro-F1' },
+      { key: 'comparative_effect_balanced_accuracy', label: 'Balanced Accuracy' },
     ],
   },
 ]

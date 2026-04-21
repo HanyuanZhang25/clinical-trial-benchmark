@@ -141,7 +141,7 @@ function Admin() {
               <th>Benchmark</th>
               <th>Status</th>
               <th>Avg F1</th>
-              <th>Avg CE</th>
+              <th>Avg Balanced Accuracy</th>
               <th>Submitted</th>
               <th>Action</th>
             </tr>
@@ -155,7 +155,7 @@ function Admin() {
                 <td>{submission.benchmark_name}</td>
                 <td>{submission.status}</td>
                 <td>{typeof submission.average_f1_macro === 'number' ? submission.average_f1_macro.toFixed(3) : '-'}</td>
-                <td>{typeof submission.average_cross_entropy === 'number' ? submission.average_cross_entropy.toFixed(3) : '-'}</td>
+                <td>{typeof submission.average_balanced_accuracy === 'number' ? submission.average_balanced_accuracy.toFixed(3) : '-'}</td>
                 <td>{new Date(submission.submitted_at).toLocaleString()}</td>
                 <td>
                   <Link to={`/submission/${submission.id}?from=admin`} className="btn btn-secondary compact-btn">

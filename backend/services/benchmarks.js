@@ -93,15 +93,28 @@ async function getLeaderboard(benchmarkIdOrSlug) {
   if (!benchmark) return null;
 
   const useHistoricalReportOrder = ['25-02', '25-09'].includes(benchmark.slug);
+  const averageMacroF1Expr = `(
+    COALESCE(endpoint_macro_f1, endpoint_prediction_f1) +
+    COALESCE(superiority_macro_f1, arm2arm_superiority_f1) +
+    COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1)
+  ) / 3.0`;
+  const averageBalancedAccuracyExpr = `(
+    COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy) +
+    COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy) +
+    COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy)
+  ) / 3.0`;
   const rows = await db.all(`
-    SELECT display_username, model_name, average_f1_macro, average_cross_entropy, cost,
-      arm2arm_superiority_f1, arm2arm_superiority_cross_entropy,
-      arm2arm_noninferiority_f1, arm2arm_noninferiority_cross_entropy,
-      endpoint_prediction_f1, endpoint_prediction_cross_entropy,
+    SELECT display_username, model_name,
+      COALESCE(endpoint_macro_f1, endpoint_prediction_f1) AS endpoint_macro_f1,
+      COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy) AS endpoint_balanced_accuracy,
+      COALESCE(superiority_macro_f1, arm2arm_superiority_f1) AS superiority_macro_f1,
+      COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy) AS superiority_balanced_accuracy,
+      COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1) AS comparative_effect_macro_f1,
+      COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy) AS comparative_effect_balanced_accuracy,
       published_at
     FROM submission_evaluations
     WHERE benchmark_id = ? AND is_public = 1 AND status = 'published'
-    ORDER BY ${useHistoricalReportOrder ? 'created_at ASC' : 'average_f1_macro DESC, average_cross_entropy ASC, created_at ASC'}
+    ORDER BY ${useHistoricalReportOrder ? 'created_at ASC' : `${averageMacroF1Expr} DESC, ${averageBalancedAccuracyExpr} DESC, created_at ASC`}
   `, [benchmark.id]);
 
   return rows.map((row, index) => ({
@@ -109,23 +122,18 @@ async function getLeaderboard(benchmarkIdOrSlug) {
     username: row.display_username,
     model: row.model_name,
     is_section_header:
-      row.average_f1_macro == null &&
-      row.average_cross_entropy == null &&
-      row.arm2arm_superiority_f1 == null &&
-      row.arm2arm_superiority_cross_entropy == null &&
-      row.arm2arm_noninferiority_f1 == null &&
-      row.arm2arm_noninferiority_cross_entropy == null &&
-      row.endpoint_prediction_f1 == null &&
-      row.endpoint_prediction_cross_entropy == null,
-    average_f1_macro: row.average_f1_macro,
-    average_cross_entropy: row.average_cross_entropy,
-    cost: row.cost,
-    arm2arm_superiority_f1: row.arm2arm_superiority_f1,
-    arm2arm_superiority_cross_entropy: row.arm2arm_superiority_cross_entropy,
-    arm2arm_noninferiority_f1: row.arm2arm_noninferiority_f1,
-    arm2arm_noninferiority_cross_entropy: row.arm2arm_noninferiority_cross_entropy,
-    endpoint_prediction_f1: row.endpoint_prediction_f1,
-    endpoint_prediction_cross_entropy: row.endpoint_prediction_cross_entropy,
+      row.endpoint_macro_f1 == null &&
+      row.endpoint_balanced_accuracy == null &&
+      row.superiority_macro_f1 == null &&
+      row.superiority_balanced_accuracy == null &&
+      row.comparative_effect_macro_f1 == null &&
+      row.comparative_effect_balanced_accuracy == null,
+    endpoint_macro_f1: row.endpoint_macro_f1,
+    endpoint_balanced_accuracy: row.endpoint_balanced_accuracy,
+    superiority_macro_f1: row.superiority_macro_f1,
+    superiority_balanced_accuracy: row.superiority_balanced_accuracy,
+    comparative_effect_macro_f1: row.comparative_effect_macro_f1,
+    comparative_effect_balanced_accuracy: row.comparative_effect_balanced_accuracy,
     published_at: row.published_at
   }));
 }

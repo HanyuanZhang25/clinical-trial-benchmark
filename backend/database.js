@@ -73,6 +73,17 @@ function ensureSqliteColumn(tableName, columnName, definition) {
   }
 }
 
+function normalizeEvaluationSeedRow(row) {
+  return {
+    endpoint_macro_f1: row.endpoint_macro_f1 ?? row.endpoint_prediction_f1 ?? null,
+    endpoint_balanced_accuracy: row.endpoint_balanced_accuracy ?? row.endpoint_prediction_cross_entropy ?? null,
+    superiority_macro_f1: row.superiority_macro_f1 ?? row.arm2arm_superiority_f1 ?? null,
+    superiority_balanced_accuracy: row.superiority_balanced_accuracy ?? row.arm2arm_superiority_cross_entropy ?? null,
+    comparative_effect_macro_f1: row.comparative_effect_macro_f1 ?? row.arm2arm_noninferiority_f1 ?? null,
+    comparative_effect_balanced_accuracy: row.comparative_effect_balanced_accuracy ?? row.arm2arm_noninferiority_cross_entropy ?? null
+  };
+}
+
 function initializeSqliteSchema() {
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -147,15 +158,12 @@ function initializeSqliteSchema() {
       benchmark_id INTEGER NOT NULL,
       display_username TEXT NOT NULL,
       model_name TEXT NOT NULL,
-      average_f1_macro REAL,
-      average_cross_entropy REAL,
-      cost REAL,
-      arm2arm_superiority_f1 REAL,
-      arm2arm_superiority_cross_entropy REAL,
-      arm2arm_noninferiority_f1 REAL,
-      arm2arm_noninferiority_cross_entropy REAL,
-      endpoint_prediction_f1 REAL,
-      endpoint_prediction_cross_entropy REAL,
+      endpoint_macro_f1 REAL,
+      endpoint_balanced_accuracy REAL,
+      superiority_macro_f1 REAL,
+      superiority_balanced_accuracy REAL,
+      comparative_effect_macro_f1 REAL,
+      comparative_effect_balanced_accuracy REAL,
       status TEXT NOT NULL DEFAULT 'pending_results',
       is_public INTEGER NOT NULL DEFAULT 0,
       published_at DATETIME,
@@ -193,6 +201,12 @@ function initializeSqliteSchema() {
   ensureSqliteColumn('submissions', 'total_cost', 'REAL DEFAULT 0');
   ensureSqliteColumn('submissions', 'status', "TEXT DEFAULT 'pending_results'");
   ensureSqliteColumn('submissions', 'validation_summary', 'TEXT');
+  ensureSqliteColumn('submission_evaluations', 'endpoint_macro_f1', 'REAL');
+  ensureSqliteColumn('submission_evaluations', 'endpoint_balanced_accuracy', 'REAL');
+  ensureSqliteColumn('submission_evaluations', 'superiority_macro_f1', 'REAL');
+  ensureSqliteColumn('submission_evaluations', 'superiority_balanced_accuracy', 'REAL');
+  ensureSqliteColumn('submission_evaluations', 'comparative_effect_macro_f1', 'REAL');
+  ensureSqliteColumn('submission_evaluations', 'comparative_effect_balanced_accuracy', 'REAL');
 
   sqliteDb.exec(`
     UPDATE users
@@ -218,6 +232,27 @@ function initializeSqliteSchema() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized ON users(lower(trim(username)));
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized ON users(lower(trim(email)));
   `);
+
+  const evaluationColumns = getColumnNames('submission_evaluations');
+  if (
+    evaluationColumns.includes('endpoint_prediction_f1') &&
+    evaluationColumns.includes('endpoint_prediction_cross_entropy') &&
+    evaluationColumns.includes('arm2arm_superiority_f1') &&
+    evaluationColumns.includes('arm2arm_superiority_cross_entropy') &&
+    evaluationColumns.includes('arm2arm_noninferiority_f1') &&
+    evaluationColumns.includes('arm2arm_noninferiority_cross_entropy')
+  ) {
+    sqliteDb.exec(`
+      UPDATE submission_evaluations
+      SET
+        endpoint_macro_f1 = COALESCE(endpoint_macro_f1, endpoint_prediction_f1),
+        endpoint_balanced_accuracy = COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy),
+        superiority_macro_f1 = COALESCE(superiority_macro_f1, arm2arm_superiority_f1),
+        superiority_balanced_accuracy = COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy),
+        comparative_effect_macro_f1 = COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1),
+        comparative_effect_balanced_accuracy = COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy)
+    `);
+  }
 }
 
 async function initializePostgresSchema() {
@@ -290,15 +325,12 @@ async function initializePostgresSchema() {
       benchmark_id INTEGER NOT NULL REFERENCES benchmarks(id) ON DELETE CASCADE,
       display_username TEXT NOT NULL,
       model_name TEXT NOT NULL,
-      average_f1_macro DOUBLE PRECISION,
-      average_cross_entropy DOUBLE PRECISION,
-      cost DOUBLE PRECISION,
-      arm2arm_superiority_f1 DOUBLE PRECISION,
-      arm2arm_superiority_cross_entropy DOUBLE PRECISION,
-      arm2arm_noninferiority_f1 DOUBLE PRECISION,
-      arm2arm_noninferiority_cross_entropy DOUBLE PRECISION,
-      endpoint_prediction_f1 DOUBLE PRECISION,
-      endpoint_prediction_cross_entropy DOUBLE PRECISION,
+      endpoint_macro_f1 DOUBLE PRECISION,
+      endpoint_balanced_accuracy DOUBLE PRECISION,
+      superiority_macro_f1 DOUBLE PRECISION,
+      superiority_balanced_accuracy DOUBLE PRECISION,
+      comparative_effect_macro_f1 DOUBLE PRECISION,
+      comparative_effect_balanced_accuracy DOUBLE PRECISION,
       status TEXT NOT NULL DEFAULT 'pending_results',
       is_public INTEGER NOT NULL DEFAULT 0,
       published_at TIMESTAMPTZ,
@@ -327,6 +359,42 @@ async function initializePostgresSchema() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_normalized ON users((lower(trim(username))));
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_normalized ON users((lower(trim(email))));
   `);
+
+  await pool.query(`
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS endpoint_macro_f1 DOUBLE PRECISION;
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS endpoint_balanced_accuracy DOUBLE PRECISION;
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS superiority_macro_f1 DOUBLE PRECISION;
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS superiority_balanced_accuracy DOUBLE PRECISION;
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS comparative_effect_macro_f1 DOUBLE PRECISION;
+    ALTER TABLE submission_evaluations ADD COLUMN IF NOT EXISTS comparative_effect_balanced_accuracy DOUBLE PRECISION;
+  `);
+
+  const columnRows = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'submission_evaluations'
+  `);
+  const evaluationColumns = new Set(columnRows.rows.map((row) => row.column_name));
+
+  if (
+    evaluationColumns.has('endpoint_prediction_f1') &&
+    evaluationColumns.has('endpoint_prediction_cross_entropy') &&
+    evaluationColumns.has('arm2arm_superiority_f1') &&
+    evaluationColumns.has('arm2arm_superiority_cross_entropy') &&
+    evaluationColumns.has('arm2arm_noninferiority_f1') &&
+    evaluationColumns.has('arm2arm_noninferiority_cross_entropy')
+  ) {
+    await pool.query(`
+      UPDATE submission_evaluations
+      SET
+        endpoint_macro_f1 = COALESCE(endpoint_macro_f1, endpoint_prediction_f1),
+        endpoint_balanced_accuracy = COALESCE(endpoint_balanced_accuracy, endpoint_prediction_cross_entropy),
+        superiority_macro_f1 = COALESCE(superiority_macro_f1, arm2arm_superiority_f1),
+        superiority_balanced_accuracy = COALESCE(superiority_balanced_accuracy, arm2arm_superiority_cross_entropy),
+        comparative_effect_macro_f1 = COALESCE(comparative_effect_macro_f1, arm2arm_noninferiority_f1),
+        comparative_effect_balanced_accuracy = COALESCE(comparative_effect_balanced_accuracy, arm2arm_noninferiority_cross_entropy)
+    `);
+  }
 }
 
 const benchmarkSeeds = [
@@ -736,28 +804,27 @@ async function seedEvaluations() {
   for (const row of evaluationSeedRows) {
     const benchmark = await rawGet('SELECT id FROM benchmarks WHERE slug = ?', [row.benchmark_slug]);
     if (!benchmark) continue;
+    const normalizedRow = normalizeEvaluationSeedRow(row);
 
     await rawInsert(`
       INSERT INTO submission_evaluations (
-        submission_id, benchmark_id, display_username, model_name, average_f1_macro, average_cross_entropy,
-        cost, arm2arm_superiority_f1, arm2arm_superiority_cross_entropy, arm2arm_noninferiority_f1,
-        arm2arm_noninferiority_cross_entropy, endpoint_prediction_f1, endpoint_prediction_cross_entropy,
+        submission_id, benchmark_id, display_username, model_name,
+        endpoint_macro_f1, endpoint_balanced_accuracy,
+        superiority_macro_f1, superiority_balanced_accuracy,
+        comparative_effect_macro_f1, comparative_effect_balanced_accuracy,
         status, is_public, published_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 1, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 1, CURRENT_TIMESTAMP)
     `, [
       null,
       benchmark.id,
       row.display_username,
       row.model_name,
-      row.average_f1_macro,
-      row.average_cross_entropy,
-      row.cost,
-      row.arm2arm_superiority_f1,
-      row.arm2arm_superiority_cross_entropy,
-      row.arm2arm_noninferiority_f1,
-      row.arm2arm_noninferiority_cross_entropy,
-      row.endpoint_prediction_f1,
-      row.endpoint_prediction_cross_entropy
+      normalizedRow.endpoint_macro_f1,
+      normalizedRow.endpoint_balanced_accuracy,
+      normalizedRow.superiority_macro_f1,
+      normalizedRow.superiority_balanced_accuracy,
+      normalizedRow.comparative_effect_macro_f1,
+      normalizedRow.comparative_effect_balanced_accuracy
     ]);
   }
 }

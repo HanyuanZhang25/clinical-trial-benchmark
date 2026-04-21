@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import FaqAccordion from '../components/FaqAccordion'
 import { api } from '../utils/api'
 
 function formatMetric(value, digits = 2) {
@@ -438,23 +437,6 @@ function Home({ user }) {
             </div>
           </section>
 
-          <section className="info-section">
-            <div className="section-header">
-              <h2>Frequently Asked Questions</h2>
-            </div>
-            <FaqAccordion items={content.faq} />
-          </section>
-
-          <section className="info-section">
-            <div className="card contact-card">
-              <p className="eyebrow">Contact</p>
-              <h2>Questions?</h2>
-              <p>
-                Please contact us at{' '}
-                <a href="mailto:ctopenchallenge@gmail.com">ctopenchallenge@gmail.com</a>.
-              </p>
-            </div>
-          </section>
         </>
       )}
     </div>

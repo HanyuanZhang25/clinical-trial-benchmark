@@ -11,11 +11,13 @@ function Contact() {
 
       <div className="card contact-page-card">
         <p>The contact email is as following, you can use it to contact with us.</p>
-        <img
-          src={contactEmailImage}
-          alt="Contact email: ctopenchallenge@gmail.com"
-          className="contact-email-image"
-        />
+        <div className="contact-email-image-frame">
+          <img
+            src={contactEmailImage}
+            alt="Contact email: ctopenchallenge@gmail.com"
+            className="contact-email-image"
+          />
+        </div>
       </div>
     </div>
   )

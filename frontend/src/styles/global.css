@@ -718,11 +718,20 @@ tbody tr:hover {
   margin: 0;
 }
 
+.contact-email-image-frame {
+  width: min(100%, 560px);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .contact-email-image {
-  width: min(100%, 520px);
+  width: min(100%, 560px);
   border-radius: 18px;
   border: 1px solid var(--line);
   background: white;
+  display: block;
 }
 
 @media (max-width: 900px) {

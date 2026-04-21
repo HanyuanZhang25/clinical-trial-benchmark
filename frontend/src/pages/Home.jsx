@@ -444,6 +444,17 @@ function Home({ user }) {
             </div>
             <FaqAccordion items={content.faq} />
           </section>
+
+          <section className="info-section">
+            <div className="card contact-card">
+              <p className="eyebrow">Contact</p>
+              <h2>Questions?</h2>
+              <p>
+                Please contact us at{' '}
+                <a href="mailto:ctopenchallenge@gmail.com">ctopenchallenge@gmail.com</a>.
+              </p>
+            </div>
+          </section>
         </>
       )}
     </div>

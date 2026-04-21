@@ -34,6 +34,17 @@ function About() {
         </div>
         <FaqAccordion items={content.faq} />
       </section>
+
+      <section className="info-section">
+        <div className="card contact-card">
+          <p className="eyebrow">Contact</p>
+          <h2>Need Help?</h2>
+          <p>
+            If you have questions about the challenge, please contact us at{' '}
+            <a href="mailto:ctopenchallenge@gmail.com">ctopenchallenge@gmail.com</a>.
+          </p>
+        </div>
+      </section>
     </div>
   )
 }

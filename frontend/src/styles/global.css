@@ -692,6 +692,21 @@ tbody tr:hover {
   color: var(--accent);
 }
 
+.contact-card {
+  display: grid;
+  gap: 8px;
+}
+
+.contact-card h2,
+.contact-card p {
+  margin: 0;
+}
+
+.contact-card a {
+  font-weight: 700;
+  word-break: break-word;
+}
+
 .pill {
   display: inline-flex;
   border-radius: 999px;

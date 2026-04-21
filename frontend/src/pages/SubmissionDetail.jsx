@@ -48,8 +48,8 @@ function SubmissionDetail() {
           <span>Average F1 Macro</span>
         </div>
         <div className="stat-card">
-          <strong>{formatMetric(submission.evaluation.average_cross_entropy)}</strong>
-          <span>Average Cross Entropy</span>
+          <strong>{formatMetric(submission.evaluation.average_balanced_accuracy)}</strong>
+          <span>Average Balanced Accuracy</span>
         </div>
       </div>
 
@@ -63,12 +63,12 @@ function SubmissionDetail() {
 
         <div className="card">
           <h2 className="section-title">Metric Snapshot</h2>
-          <p>Arm2Arm Superiority F1: {formatMetric(submission.evaluation.arm2arm_superiority_f1)}</p>
-          <p>Arm2Arm Superiority Cross Entropy: {formatMetric(submission.evaluation.arm2arm_superiority_cross_entropy)}</p>
-          <p>Arm2Arm Non-Inferiority F1: {formatMetric(submission.evaluation.arm2arm_noninferiority_f1)}</p>
-          <p>Arm2Arm Non-Inferiority Cross Entropy: {formatMetric(submission.evaluation.arm2arm_noninferiority_cross_entropy)}</p>
-          <p>Endpoint Prediction F1: {formatMetric(submission.evaluation.endpoint_prediction_f1)}</p>
-          <p>Endpoint Prediction Cross Entropy: {formatMetric(submission.evaluation.endpoint_prediction_cross_entropy)}</p>
+          <p>Endpoint Macro-F1: {formatMetric(submission.evaluation.endpoint_macro_f1)}</p>
+          <p>Endpoint Balanced Accuracy: {formatMetric(submission.evaluation.endpoint_balanced_accuracy)}</p>
+          <p>Superiority Macro-F1: {formatMetric(submission.evaluation.superiority_macro_f1)}</p>
+          <p>Superiority Balanced Accuracy: {formatMetric(submission.evaluation.superiority_balanced_accuracy)}</p>
+          <p>Comparative Effect Macro-F1: {formatMetric(submission.evaluation.comparative_effect_macro_f1)}</p>
+          <p>Comparative Effect Balanced Accuracy: {formatMetric(submission.evaluation.comparative_effect_balanced_accuracy)}</p>
         </div>
       </div>
 

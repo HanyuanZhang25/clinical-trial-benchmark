@@ -10,6 +10,7 @@ import Submit from './pages/Submit'
 import MySubmissions from './pages/MySubmissions'
 import SubmissionDetail from './pages/SubmissionDetail'
 import About from './pages/About'
+import Contact from './pages/Contact'
 import Admin from './pages/Admin'
 import { api } from './utils/api'
 
@@ -41,6 +42,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home user={user} />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={setUser} />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <Register onLogin={setUser} />} />
             <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />

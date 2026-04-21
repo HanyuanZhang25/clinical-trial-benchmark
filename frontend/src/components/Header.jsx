@@ -16,6 +16,7 @@ function Header({ user, onLogout }) {
         <nav className="header-nav">
           <Link to="/" className={isActive('/')}>Benchmarks</Link>
           <Link to="/about" className={isActive('/about')}>Instructions</Link>
+          <Link to="/contact" className={isActive('/contact')}>Contact</Link>
           {user ? (
             <>
               <Link to="/submit" className={isActive('/submit')}>Submit</Link>

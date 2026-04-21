@@ -692,21 +692,6 @@ tbody tr:hover {
   color: var(--accent);
 }
 
-.contact-card {
-  display: grid;
-  gap: 8px;
-}
-
-.contact-card h2,
-.contact-card p {
-  margin: 0;
-}
-
-.contact-card a {
-  font-weight: 700;
-  word-break: break-word;
-}
-
 .pill {
   display: inline-flex;
   border-radius: 999px;
@@ -722,6 +707,22 @@ tbody tr:hover {
   background: #132238;
   color: #f8fafc;
   overflow: auto;
+}
+
+.contact-page-card {
+  display: grid;
+  gap: 20px;
+}
+
+.contact-page-card p {
+  margin: 0;
+}
+
+.contact-email-image {
+  width: min(100%, 520px);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: white;
 }
 
 @media (max-width: 900px) {

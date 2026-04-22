@@ -37,40 +37,24 @@ module.exports = {
   },
   faq: [
     {
-      question: 'How are the leaderboard metrics organized?',
-      answer: 'CT Open reports results separately for three question categories: Endpoint, Superiority, and Comparative Effect. For each category, the leaderboard shows Macro-F1 and Balanced Accuracy so participants can compare performance across the different prediction tasks.'
+      question: 'What is a benchmark cycle?',
+      answer: 'CT Open runs four benchmark cycles each year — Winter Open, Spring Open, Summer Open, and Fall Open — with each cycle covering a three-month window and a fixed set of clinical trial prediction questions. Participants submit predictions before that cycle’s evaluation window begins. After the window ends, CT Open identifies the subset of trials that had no publicly available results before the window but obtained usable public results during it, and uses only that subset to evaluate submissions and release the leaderboard after the cycle finish.'
     },
     {
-      question: 'What does Balanced Accuracy mean in this table?',
-      answer: 'Balanced Accuracy is the average of a model\'s accuracy on the positive class and its accuracy on the negative class. It is useful when the class distribution is imbalanced because it prevents the larger class from dominating the score.'
+      question: 'How is the leaderboard score calculated?',
+      answer: 'CT Open evaluates submissions separately across three question categories: Endpoint, Superiority, and Comparative Effect. Endpoint questions ask whether a trial, or at least one study arm in a trial, meets a pre-specified endpoint. Superiority questions ask whether the treatment arm shows a statistically significant improvement over the comparator arm. Comparative Effect questions ask whether the treatment arm is statistically significantly better than, worse than, or not different from the comparator arm. For each category, CT Open compares a submission’s predictions with the official benchmark answers and computes that category’s F1 score and Balanced Accuracy. Here, Balanced Accuracy means the average of the model’s accuracy on the positive class and its accuracy on the negative class, so performance is measured more fairly when the class distribution is imbalanced. The leaderboard then reports these category-level scores to show performance across the different types of prediction tasks. The paper’s evaluation table also reports results separately for Endpoint, Superiority, and Comparative Effect, using Macro-F1 and an accuracy-based metric for each category.'
     },
     {
-      question: 'Why are some benchmarks open for submission but do not yet show results?',
-      answer: 'Open benchmarks intentionally hide the final leaderboard until the submission window closes and ground-truth answers are ready to publish. This prevents leakage and ensures everyone is evaluated against the same final answer key.'
+      question: 'What is the submission format?',
+      answer: 'Your submission must be a UTF-8 encoded JSON file, and the top level of the file must be a dictionary. In that dictionary, each key should be a valid question ID from the benchmark. The value for each question should be a list of answer choices. This list is used when your model provides multiple predictions for the same question. Each item in the list represents the model’s choice for one prediction. For example, if the value is ["a", "b", "a"], that means the model chose a for the first prediction, b for the second, and a for the third. Because of this, all question lists must have the same length, so every question has the same number of predictions. Your file must include every required question ID in the benchmark, and the total number of submitted questions must match the benchmark exactly. Each answer list must contain at least one option. For most questions, the allowed options are a and b. Sometimes, a question may allow a, b, and c. Uppercase and lowercase letters are both accepted. Submissions are only accepted when the benchmark is open. You must also be logged in and have a verified email address before you can submit. The uploaded file must be 5 MB or smaller. You may upload a file more than once, but only your latest uploaded submission for that benchmark will count on the leaderboard. Any older uploaded submissions will remain in the system and be marked as discarded.'
     },
     {
-      question: 'How do you validate a submission file?',
-      answer: 'Each uploaded JSON is validated in layers: authenticated request checks, JSON parsing, schema validation, and semantic validation against the canonical benchmark manifest. The server rejects missing required problems, unknown IDs, invalid option formats, and invalid options.'
-    },
-    {
-      question: 'What should the submission JSON look like?',
-      answer: 'The platform expects a JSON object where each key is a question ID and each value is a non-empty option list. All option lists must have the same length. Non-inferiority questions allow a, b, and c, while other questions allow only a and b.'
+      question: 'When will the leaderboard be released?',
+      answer: 'Each CT Open benchmark cycle covers a three-month window. After that window ends, CT Open evaluates eligible submissions and releases the leaderboard in the first week after the cycle closes. For example, the leaderboard is released in the first week of March for Winter Open, June for Spring Open, September for Summer Open, and December for Fall Open.'
     },
     {
       question: 'Can I submit multiple times?',
-      answer: 'Yes. The platform stores each submission attempt in your personal history. Open benchmarks may accept multiple submissions during the submission window, while published leaderboards remain read-only.'
-    },
-    {
-      question: 'Why do some benchmark tabs have tables while others only have a submission call?',
-      answer: 'Tabs are driven by benchmark lifecycle state. Published benchmarks render historical result tables, while open benchmarks render download and submission actions. As each cycle closes and results are published, that tab changes from submission mode into leaderboard mode.'
-    },
-    {
-      question: 'How can I contact the team?',
-      answer: 'Please use the Contact page on the website to reach the team.'
-    },
-    {
-      question: 'When will the 26/06 Benchmark leaderboard be published?',
-      answer: 'The 26/06 Benchmark leaderboard appears after the submission window closes and results are published according to its benchmark schedule. Until then, the tab remains submission-focused and your latest valid upload is kept as your active submission.'
+      answer: 'Yes. You may upload more than one submission for the same benchmark, but only your latest submission will count on the leaderboard. When a new submission is accepted, the previous one for that benchmark will be discard and replaced by the new submission.'
     }
   ]
 }

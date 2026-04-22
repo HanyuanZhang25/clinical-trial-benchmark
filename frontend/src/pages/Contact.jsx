@@ -1,5 +1,5 @@
 import React from 'react'
-import contactEmailImage from '../assets/contact-email.jpg'
+import contactEmailImage from '../assets/contact-email.png'
 
 function Contact() {
   return (

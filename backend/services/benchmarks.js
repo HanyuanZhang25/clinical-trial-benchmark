@@ -114,7 +114,7 @@ async function getLeaderboard(benchmarkIdOrSlug) {
       published_at
     FROM submission_evaluations
     WHERE benchmark_id = ? AND is_public = 1 AND status = 'published'
-    ORDER BY ${useHistoricalReportOrder ? 'created_at ASC' : `${averageMacroF1Expr} DESC, ${averageBalancedAccuracyExpr} DESC, created_at ASC`}
+    ORDER BY ${useHistoricalReportOrder ? 'id ASC' : `${averageMacroF1Expr} DESC, ${averageBalancedAccuracyExpr} DESC, created_at ASC`}
   `, [benchmark.id]);
 
   return rows.map((row, index) => ({

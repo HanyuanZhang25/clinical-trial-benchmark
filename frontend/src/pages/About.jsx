@@ -18,7 +18,6 @@ function About() {
   return (
     <div className="page-shell">
       <div className="section-header">
-        <p className="eyebrow">Instructions</p>
         <h1 className="page-title">{content.introduction.title}</h1>
       </div>
       <div className="card prose-card">
@@ -29,7 +28,6 @@ function About() {
 
       <section className="info-section">
         <div className="section-header">
-          <p className="eyebrow">FAQ</p>
           <h2>Frequently Asked Questions</h2>
         </div>
         <FaqAccordion items={content.faq} />

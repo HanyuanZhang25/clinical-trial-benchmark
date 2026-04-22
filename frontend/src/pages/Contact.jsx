@@ -5,7 +5,6 @@ function Contact() {
   return (
     <div className="page-shell">
       <div className="section-header">
-        <p className="eyebrow">Contact</p>
         <h1 className="page-title">Contact</h1>
       </div>
 

@@ -72,10 +72,12 @@ function SubmissionDetail() {
         </div>
       </div>
 
-      <div className="card top-gap">
-        <h2 className="section-title">Submitted Payload</h2>
-        <pre className="code-block">{JSON.stringify(submission.raw_payload, null, 2)}</pre>
-      </div>
+      {submission.raw_payload && (
+        <div className="card top-gap">
+          <h2 className="section-title">Submitted Payload</h2>
+          <pre className="code-block">{JSON.stringify(submission.raw_payload, null, 2)}</pre>
+        </div>
+      )}
     </div>
   )
 }

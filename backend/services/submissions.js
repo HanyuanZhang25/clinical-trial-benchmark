@@ -287,6 +287,8 @@ async function getSubmissionDetail(submissionId, user) {
     throw validationError('FORBIDDEN', 'Access denied.', 403);
   }
 
+  const canViewPayload = row.user_id === user.id;
+
   const endpointMacroF1 = row.endpoint_macro_f1 ?? null;
   const endpointBalancedAccuracy = row.endpoint_balanced_accuracy ?? null;
   const superiorityMacroF1 = row.superiority_macro_f1 ?? null;
@@ -302,7 +304,7 @@ async function getSubmissionDetail(submissionId, user) {
     benchmark_version: row.benchmark_version,
     status: row.status,
     submitted_at: row.submitted_at,
-    raw_payload: row.raw_payload ? JSON.parse(row.raw_payload) : null,
+    raw_payload: canViewPayload && row.raw_payload ? JSON.parse(row.raw_payload) : null,
     validation_summary: row.validation_summary ? JSON.parse(row.validation_summary) : null,
     evaluation: {
       average_f1_macro: averageMetric([endpointMacroF1, superiorityMacroF1, comparativeEffectMacroF1]),

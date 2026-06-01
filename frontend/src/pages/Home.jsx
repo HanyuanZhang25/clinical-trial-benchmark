@@ -193,15 +193,25 @@ function PublishedBenchmarkTable({ benchmark, rows }) {
 
 function OpenBenchmarkPanel({ benchmark, user }) {
   const deadlineLabel = formatDate(benchmark.submission_close_at)
+  const isSubmissionOpen = benchmark.is_submission_open
+  const isUpcoming = benchmark.state === 'upcoming'
+  const submissionStatus = isSubmissionOpen
+    ? `Actively accepting submissions. The submission deadline is ${deadlineLabel}.`
+    : isUpcoming
+      ? `Submissions are not open yet. The submission deadline is ${deadlineLabel}.`
+      : `Stop accepting submissions. The submission deadline is ${deadlineLabel}.`
+  const inactiveMessage = isUpcoming
+    ? 'The submission window is not open yet. Benchmark files remain available for download.'
+    : 'The submission window is closed. Benchmark files remain available for download.'
 
   return (
     <div className="open-benchmark-panel">
-      <p className="eyebrow">Actively accepting submissions. The submission deadline is {deadlineLabel}.</p>
+      <p className="eyebrow">{submissionStatus}</p>
       <h2>{benchmark.display_name}</h2>
       <p>
-        We are actively seeking submissions for {benchmark.display_name}.
-        Download the benchmark questions, submit your predictions for each question, and upload a
-        JSON file according to our formatting rules.
+        {isSubmissionOpen
+          ? `We are actively seeking submissions for ${benchmark.display_name}. Download the benchmark questions, submit your predictions for each question, and upload a JSON file according to our formatting rules.`
+          : `The submission window for ${benchmark.display_name} is not currently open. Benchmark questions remain available for download.`}
       </p>
       <p>
         Auxiliary information is also available as trial metadata keyed by NCT ID. Participants may
@@ -215,25 +225,33 @@ function OpenBenchmarkPanel({ benchmark, user }) {
         <a className="btn btn-secondary" href={api.getAuxiliaryUrl(benchmark.id)}>
           Auxiliary Information
         </a>
-        <Link className="btn btn-primary" to="/submit">
-          Ready to Submit?
-        </Link>
+        {isSubmissionOpen && (
+          <Link className="btn btn-primary" to="/submit">
+            Ready to Submit?
+          </Link>
+        )}
       </div>
 
-      {!user && (
+      {!isSubmissionOpen && (
+        <div className="callout">
+          {inactiveMessage}
+        </div>
+      )}
+
+      {isSubmissionOpen && !user && (
         <div className="callout callout-warning">
           Please log in and submit. We only accept submissions from authenticated users.
         </div>
       )}
 
-      {user && !user.email_verified && (
+      {isSubmissionOpen && user && !user.email_verified && (
         <div className="callout callout-warning">
           Your account is signed in, but email verification is still required before submissions are accepted.
           <Link to="/verify-email"> Complete verification</Link>.
         </div>
       )}
 
-      {Boolean(user?.email_verified) && (
+      {isSubmissionOpen && Boolean(user?.email_verified) && (
         <div className="callout callout-success">
           Your account is verified. You can download the file above and submit through the benchmark upload flow.
         </div>

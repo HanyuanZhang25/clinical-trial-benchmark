@@ -436,6 +436,19 @@ const benchmarkSeeds = [
     manifest_file_path: benchmarkAssetPath('manifest_26_06.json', { useGcsInProduction: true }),
     has_ground_truth: 0,
     description: 'Current benchmark window that accepts new submissions.'
+  },
+  {
+    slug: '26-09',
+    display_name: 'Fall 2026 Open',
+    benchmark_cycle_label: '26/09',
+    state: 'open_for_submission',
+    submission_open_at: '2026-06-01T07:00:00Z',
+    submission_close_at: '2026-09-01T06:59:59Z',
+    result_publish_at: '2027-01-07T08:00:00Z',
+    download_file_path: benchmarkAssetPath('download_26_09.json', { useGcsInProduction: true }),
+    manifest_file_path: benchmarkAssetPath('manifest_26_09.json', { useGcsInProduction: true }),
+    has_ground_truth: 0,
+    description: 'Current benchmark window that accepts new submissions.'
   }
 ];
 

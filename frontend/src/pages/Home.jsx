@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
 
+const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
+
 function formatMetric(value, digits = 2) {
   return typeof value === 'number' ? value.toFixed(digits) : '-'
 }
@@ -33,7 +35,7 @@ function formatDate(dateString) {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
+    timeZone: DISPLAY_TIME_ZONE,
   })
 }
 
@@ -44,9 +46,9 @@ function formatWindow(openAt, closeAt) {
 
   const openDate = new Date(openValue)
   const closeDate = new Date(closeValue)
-  const openMonth = openDate.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })
-  const closeMonth = closeDate.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })
-  const closeYear = closeDate.toLocaleString('en-US', { year: 'numeric', timeZone: 'UTC' })
+  const openMonth = openDate.toLocaleString('en-US', { month: 'long', timeZone: DISPLAY_TIME_ZONE })
+  const closeMonth = closeDate.toLocaleString('en-US', { month: 'long', timeZone: DISPLAY_TIME_ZONE })
+  const closeYear = closeDate.toLocaleString('en-US', { year: 'numeric', timeZone: DISPLAY_TIME_ZONE })
 
   return openMonth === closeMonth
     ? `${openMonth} ${closeYear}`
@@ -370,8 +372,8 @@ function Home({ user }) {
                 <tr>
                   <th>Challenge</th>
                   <th>Window</th>
-                  <th>Submission Deadline (AOE)</th>
-                  <th>Leaderboard Release (AOE)</th>
+                  <th>Submission Deadline (Los Angeles Time)</th>
+                  <th>Leaderboard Release (Los Angeles Time)</th>
                   <th>Status</th>
                 </tr>
               </thead>

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
 
+const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
+
 function formatDate(dateString) {
   if (!dateString) return 'TBD'
 
@@ -12,7 +14,7 @@ function formatDate(dateString) {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
+    timeZone: DISPLAY_TIME_ZONE,
   })
 }
 

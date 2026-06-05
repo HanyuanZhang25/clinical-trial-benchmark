@@ -134,6 +134,15 @@ module.exports = {
         ]
       },
       {
+        heading: 'Code And Resources',
+        paragraphs: [
+          'For code, dataset utilities, and benchmark resources, visit the CT Open GitHub repository:'
+        ],
+        items: [
+          '[CT_Open GitHub Repository](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/tree/main)'
+        ]
+      },
+      {
         heading: 'Explore The Data',
         paragraphs: [
           'Get started before the next challenge with our open datasets:',

@@ -50,6 +50,9 @@ function ContentSections({ sections = [] }) {
               </table>
             </div>
           )}
+          {section.afterTableParagraphs?.map((paragraph) => (
+            <p key={paragraph}>{renderInlineText(paragraph)}</p>
+          ))}
           {section.items && (
             <ul>
               {section.items.map((item) => (

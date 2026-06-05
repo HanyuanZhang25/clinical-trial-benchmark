@@ -81,6 +81,14 @@ function getScheduleStatusLabel(state) {
   }
 }
 
+function getBenchmarkTabStatusLabel(benchmark) {
+  if (benchmark.is_result_published) return 'Leaderboard'
+  if (benchmark.is_submission_open) return 'Accepting Submission'
+  if (benchmark.state === 'closed_pending_results') return 'Closed Pending Results'
+
+  return ''
+}
+
 const METRIC_GROUPS = [
   {
     key: 'endpoint',
@@ -417,17 +425,21 @@ function Home({ user }) {
 
       <section className="benchmark-section">
         <div className="benchmark-tabs">
-          {benchmarks.map((benchmark) => (
-            <button
-              type="button"
-              key={benchmark.id}
-              className={`benchmark-tab ${activeBenchmark?.id === benchmark.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(benchmark.id)}
-            >
-              <span>{benchmark.display_name}</span>
-              {benchmark.is_result_published && <small>leaderboard</small>}
-            </button>
-          ))}
+          {benchmarks.map((benchmark) => {
+            const tabStatusLabel = getBenchmarkTabStatusLabel(benchmark)
+
+            return (
+              <button
+                type="button"
+                key={benchmark.id}
+                className={`benchmark-tab ${activeBenchmark?.id === benchmark.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(benchmark.id)}
+              >
+                <span>{benchmark.display_name}</span>
+                {tabStatusLabel && <small>{tabStatusLabel}</small>}
+              </button>
+            )
+          })}
         </div>
 
         {activeBenchmark?.is_result_published ? (

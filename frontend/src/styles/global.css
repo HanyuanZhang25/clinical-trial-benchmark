@@ -618,6 +618,56 @@ tbody tr:hover {
   margin: 0 0 14px;
 }
 
+.content-section {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.content-section h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.35rem;
+}
+
+.content-section p,
+.content-section ul {
+  margin: 0;
+}
+
+.content-section ul {
+  display: grid;
+  gap: 10px;
+  padding-left: 22px;
+}
+
+.content-section li {
+  line-height: 1.5;
+}
+
+.content-section:last-child {
+  margin-bottom: 0;
+}
+
+.content-table-shell {
+  overflow-x: auto;
+}
+
+.content-table {
+  width: min(680px, 100%);
+}
+
+.content-table th,
+.content-table td {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.content-table th:not(:first-child),
+.content-table td:not(:first-child) {
+  text-align: right;
+}
+
 .page-shell > .page-subtitle {
   margin-bottom: 10px;
 }

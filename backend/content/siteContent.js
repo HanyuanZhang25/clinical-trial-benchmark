@@ -23,16 +23,172 @@ module.exports = {
   },
   introduction: {
     title: 'About CT Open',
-    paragraphs: [
-      'Scientists have long sought to accurately predict outcomes of real-world events before they happen. Can AI systems do so more reliably? We study this question through clinical trial outcome prediction, a high-stakes open challenge even for domain experts, with immediate consequences for patients, pharmaceutical companies, and investors.',
-      'We introduce CT Open, an open-access live platform that runs four challenge cycles every year. Anyone can submit predictions for clinical trial outcomes in each challenge cycle. In the next cycle, CT Open evaluates those submissions on trials whose outcomes were not yet public at the submission deadline but became public afterward.',
-      'Determining if a trial\'s outcome is public on the internet before a certain date is surprisingly difficult. Outcomes posted on official registries may lag behind years, while the first mention may appear in obscure news articles. To address this, we propose a novel, fully automated pipeline that uses iterative LLM-powered web search to identify the earliest mention of trial outcomes.',
-      'We validate the pipeline\'s quality and accuracy using human expert annotations. Since CT Open\'s pipeline ensures that every evaluated trial had no publicly reported outcome when the prediction was made, it allows participants to use any methodology and any data source.',
-      'In this paper, we release a large-scale training set and two time-stamped test benchmarks, Winter25 and Summer25. We present promising results showing that retrieval-augmented and agentic LLMs outperform baseline methods. We believe CT Open can serve as a central hub for advancing AI research on forecasting real-world outcomes before they occur, while also informing biomedical research and improving clinical trial design.'
+    sections: [
+      {
+        heading: 'Mission Statement',
+        paragraphs: [
+          '**Our mission is to advance clinical trial outcome prediction by building a fair, open, and live platform where different methods can be tested on whether they can forecast trial results before those results are publicly known.**',
+          'We do this by building a contamination-resistant challenge platform where any method, from any participant, can be evaluated against future clinical trial outcomes. By measuring genuine predictive ability rather than recall of known answers, CT Open aims to advance AI research, inform biomedical discovery, and help the community better understand what makes clinical trials succeed or fail.'
+        ]
+      },
+      {
+        heading: 'What Is CT Open? (Introduction)',
+        paragraphs: [
+          'CT Open is a **live, open-access platform for predicting clinical trial outcomes**, forecasting whether a trial will meet its goals before its results are ever published.',
+          'Every year we run **four challenges**: Winter, Spring, Summer, and Fall. Each challenge gives participants a set of questions about real, ongoing clinical trials. Participants submit their predictions before the deadline. Over the following months, as those trials report their results, we check the predictions against what actually happened and publish a public leaderboard.',
+          'Here is what makes CT Open different from a typical benchmark: **we only score participants on trials whose outcomes were not available anywhere on the internet when they submitted.** A novel, expert-validated pipeline searches the web, including registries, journals, news, press releases, conference materials, and financial disclosures, to confirm whether a result had already been made public. That means strong performance cannot come from simply looking up the answer. It has to come from real predictive skill.',
+          'And participants can get there however they like. **Any method, any data source is welcome**, including large language models, classical machine learning, agentic web search, expert judgment, or something nobody has tried yet. The challenge is open to everyone.'
+        ]
+      },
+      {
+        heading: 'How It Works',
+        items: [
+          '**1. Download the questions.** Each challenge releases a set of prediction questions about clinical trials likely to report results soon.',
+          '**2. Submit before the deadline.** Make your predictions and upload them before the submission window closes. At submission time, the scored trial outcomes should not yet be publicly known.',
+          '**3. We wait, then we verify.** As the evaluation window unfolds, trials report their outcomes. CT Open checks public sources to confirm which trial results became available only after the submission deadline.',
+          '**4. The leaderboard goes live.** We evaluate submissions on the verified eligible set and publish the rankings after the results have been checked.'
+        ]
+      },
+      {
+        heading: 'What Makes CT Open Different',
+        paragraphs: [
+          '**Live and Dynamic**',
+          'New time-stamped benchmarks are released across the year. Models are tested on fresh clinical trial outcomes they could not have memorized, so results reflect forecasting ability rather than leakage.',
+          '**Open to Every Method**',
+          'There is no fixed modeling protocol and no restricted toolset. Clinical trial prediction is a genuinely open problem. We do not assume any single approach will win, so we welcome them all.',
+          '**Contamination-Resistant**',
+          'CT Open checks whether trial outcomes were already publicly available before the submission deadline. If a result was public before submission, that trial is excluded from scoring.'
+        ]
+      },
+      {
+        heading: 'Now Live: Fall Open 2026',
+        paragraphs: [
+          '**Status:** Accepting submissions',
+          '**Submission deadline:** September 1, 2026',
+          '**Leaderboard release:** January 7, 2027'
+        ]
+      },
+      {
+        heading: 'Why It Matters',
+        paragraphs: [
+          'Clinical development is full of uncertainty. Many trials launch with high hopes and fail to meet their objectives. Accurate prediction of trial outcomes could help **clinicians, patients, and researchers** make better decisions and help **drug developers** design stronger trials.',
+          'It is also an important test for AI. Today\'s models are remarkably good at tasks where the answer is already known somewhere. But can they make useful predictions about questions whose answers are not yet public? CT Open exists to study that question in a live setting and to reward systems that demonstrate genuine foresight.'
+        ]
+      },
+      {
+        heading: 'What You Will Predict',
+        paragraphs: [
+          'CT Open questions are defined at the level of a specific trial outcome measure and its study arms. There are three types:'
+        ],
+        items: [
+          '**Superiority**: Did the treatment significantly outperform the comparator?',
+          '**Comparative Effect**: Was the treatment significantly better, worse, or no different than the comparator?',
+          '**Endpoint**: Did the trial, or at least one arm, meet its endpoint?'
+        ]
+      },
+      {
+        heading: 'Explore The Data',
+        paragraphs: [
+          'Get started before the next challenge with our open datasets:',
+          'Spanning oncology, cardiovascular disease, autoimmune disorders, neurology, and many more, across 80+ countries.'
+        ],
+        table: {
+          headers: ['', 'Trials', 'Questions'],
+          rows: [
+            ['**Training Set**', '7,292', '~15,444'],
+            ['**Winter 2025 Benchmark**', '314', '605'],
+            ['**Summer 2025 Benchmark**', '240', '857']
+          ]
+        }
+      },
+      {
+        heading: 'Who It Is For',
+        paragraphs: [
+          'AI and machine-learning researchers, forecasting enthusiasts, biomedical and clinical trial scientists, pharmaceutical teams, and anyone curious whether the future of a trial can be called in advance.'
+        ]
+      }
     ],
     links: [
       { label: 'Code', href: '#' },
       { label: 'Report / PDF', href: '#' }
+    ]
+  },
+  instructionsIntroduction: {
+    title: 'About CT Open',
+    sections: [
+      {
+        heading: 'From Benchmark To Participation',
+        paragraphs: [
+          'This page provides the practical details behind the CT Open challenge introduced on the benchmark page.',
+          'The benchmark page explains what CT Open is and why it exists. This page explains how to participate, how submissions are handled, and how results are evaluated.'
+        ]
+      },
+      {
+        heading: 'How It Works',
+        items: [
+          '**1. Download the questions.** Each challenge releases a set of prediction questions about clinical trials likely to report results soon.',
+          '**2. Submit before the deadline.** Make your predictions and upload them before the submission window closes. At submission time, the scored trial outcomes should not yet be publicly known.',
+          '**3. We wait, then we verify.** As the evaluation window unfolds, trials report their outcomes. CT Open checks public sources to confirm which trial results became available only after the submission deadline.',
+          '**4. The leaderboard goes live.** We evaluate submissions on the verified eligible set and publish the rankings after the results have been checked.'
+        ]
+      },
+      {
+        heading: 'Submission Window',
+        paragraphs: [
+          'Each challenge has a submission window. During this period, participants can upload prediction files for the current challenge.',
+          'A valid submission must follow the required JSON format and must be uploaded before the deadline. Once the submission window closes, participants can no longer update answers for that challenge cycle.',
+          'If a participant submits multiple valid files during the same challenge cycle, CT Open keeps the most recent valid submission for that cycle.'
+        ]
+      },
+      {
+        heading: 'Evaluation Window',
+        paragraphs: [
+          'The evaluation happens after submissions close. During the evaluation window, some trials in the benchmark may report results publicly.',
+          'CT Open then checks which trial outcomes became available after the submission deadline and uses those eligible trials for scoring.',
+          'Trials whose outcomes were already public before the deadline are excluded from evaluation, because they would not fairly test prediction.'
+        ]
+      },
+      {
+        heading: 'Contamination Checks',
+        paragraphs: [
+          'CT Open is designed to be contamination-resistant.',
+          'The platform checks whether trial outcomes were already publicly available before the submission deadline. Public sources may include registries, journals, news, press releases, conference materials, financial disclosures, and other public records.',
+          'If a result was public before submission, that trial is excluded from scoring.'
+        ]
+      },
+      {
+        heading: 'What You Will Predict',
+        paragraphs: [
+          'CT Open questions are defined at the level of a specific trial outcome measure and its study arms. There are three types:'
+        ],
+        items: [
+          '**Superiority**: Did the treatment significantly outperform the comparator?',
+          '**Comparative Effect**: Was the treatment significantly better, worse, or no different than the comparator?',
+          '**Endpoint**: Did the trial, or at least one arm, meet its endpoint?'
+        ]
+      },
+      {
+        heading: 'Leaderboard Release',
+        paragraphs: [
+          'After the evaluation window ends and eligible outcomes have been verified, CT Open computes scores for valid submissions and publishes the leaderboard.',
+          'The leaderboard reflects the most recent valid submission from each participant for that challenge cycle.'
+        ]
+      },
+      {
+        heading: 'Explore The Data',
+        paragraphs: [
+          'Get started before the next challenge with our open datasets:',
+          'Spanning oncology, cardiovascular disease, autoimmune disorders, neurology, and many more, across 80+ countries.'
+        ],
+        table: {
+          headers: ['', 'Trials', 'Questions'],
+          rows: [
+            ['**Training Set**', '7,292', '~15,444'],
+            ['**Winter 2025 Benchmark**', '314', '605'],
+            ['**Summer 2025 Benchmark**', '240', '857']
+          ]
+        }
+      }
     ]
   },
   faq: [

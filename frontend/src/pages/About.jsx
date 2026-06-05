@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import ContentSections from '../components/ContentSections'
 import FaqAccordion from '../components/FaqAccordion'
 import { api } from '../utils/api'
 
@@ -15,15 +16,19 @@ function About() {
   if (error) return <div className="alert alert-error">{error}</div>
   if (!content) return <div className="loading-card">Loading instructions...</div>
 
+  const introduction = content.instructionsIntroduction || content.introduction
+
   return (
     <div className="page-shell">
       <div className="section-header">
-        <h1 className="page-title">{content.introduction.title}</h1>
+        <h1 className="page-title">{introduction.title}</h1>
       </div>
       <div className="card prose-card">
-        {content.introduction.paragraphs.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
+        {introduction.sections
+          ? <ContentSections sections={introduction.sections} />
+          : introduction.paragraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
       </div>
 
       <section className="info-section">

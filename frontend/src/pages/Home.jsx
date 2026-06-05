@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ContentSections from '../components/ContentSections'
 import { api } from '../utils/api'
 
 const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
@@ -480,7 +481,9 @@ function Home({ user }) {
               <h2>{content.introduction.title}</h2>
             </div>
             <div className="card prose-card">
-              <p>{content.introduction.paragraphs.join(' ')}</p>
+              {content.introduction.sections
+                ? <ContentSections sections={content.introduction.sections} />
+                : <p>{content.introduction.paragraphs.join(' ')}</p>}
               {content.introduction.links
                 .filter((link) => /report|pdf/i.test(link.label))
                 .map((link) => (

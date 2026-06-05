@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
 
 const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
+const CHALLENGE_WINDOW_LABELS = {
+  '26-06': 'June-August 2026',
+  '26-09': 'September-December 2026',
+}
 
 function formatMetric(value, digits = 2) {
   return typeof value === 'number' ? value.toFixed(digits) : '-'
@@ -53,6 +57,11 @@ function formatWindow(openAt, closeAt) {
   return openMonth === closeMonth
     ? `${openMonth} ${closeYear}`
     : `${openMonth}-${closeMonth} ${closeYear}`
+}
+
+function getChallengeWindowLabel(benchmark) {
+  return CHALLENGE_WINDOW_LABELS[benchmark.slug]
+    || formatWindow(benchmark.submission_open_at, benchmark.submission_close_at)
 }
 
 function getScheduleStatusLabel(state) {
@@ -316,7 +325,7 @@ function Home({ user }) {
       benchmarks.map((benchmark) => ({
         id: benchmark.id,
         challenge: benchmark.display_name,
-        window: formatWindow(benchmark.submission_open_at, benchmark.submission_close_at),
+        window: getChallengeWindowLabel(benchmark),
         deadline: formatDate(benchmark.submission_close_at),
         deadlineDate: benchmark.submission_close_at,
         release: formatDate(benchmark.result_publish_at),

@@ -211,6 +211,13 @@ select {
   gap: 18px;
 }
 
+.vision-video-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
 .vision-video-link {
   justify-self: start;
 }

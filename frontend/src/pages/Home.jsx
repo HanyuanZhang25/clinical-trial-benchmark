@@ -381,17 +381,17 @@ function Home({ user }) {
       </section>
 
       <section className="vision-video-section" aria-labelledby="vision-video-heading">
-        <div className="section-header">
+        <div className="section-header vision-video-header">
           <h2 id="vision-video-heading">CT Open Vision</h2>
+          <a
+            className="btn btn-primary vision-video-link"
+            href={VISION_VIDEO_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Watch on YouTube
+          </a>
         </div>
-        <a
-          className="btn btn-primary vision-video-link"
-          href={VISION_VIDEO_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Watch on YouTube
-        </a>
       </section>
 
       <section className="info-section">

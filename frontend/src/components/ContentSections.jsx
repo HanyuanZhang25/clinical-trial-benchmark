@@ -1,9 +1,18 @@
 import React from 'react'
 
 function renderInlineText(text) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+  return text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g).map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>
+    }
+
+    const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part)
+    if (linkMatch) {
+      return (
+        <a key={`${part}-${index}`} href={linkMatch[2]} target="_blank" rel="noreferrer">
+          {linkMatch[1]}
+        </a>
+      )
     }
 
     return part
@@ -19,13 +28,6 @@ function ContentSections({ sections = [] }) {
           {section.paragraphs?.map((paragraph) => (
             <p key={paragraph}>{renderInlineText(paragraph)}</p>
           ))}
-          {section.items && (
-            <ul>
-              {section.items.map((item) => (
-                <li key={item}>{renderInlineText(item)}</li>
-              ))}
-            </ul>
-          )}
           {section.table && (
             <div className="content-table-shell">
               <table className="content-table">
@@ -47,6 +49,13 @@ function ContentSections({ sections = [] }) {
                 </tbody>
               </table>
             </div>
+          )}
+          {section.items && (
+            <ul>
+              {section.items.map((item) => (
+                <li key={item}>{renderInlineText(item)}</li>
+              ))}
+            </ul>
           )}
         </section>
       ))}

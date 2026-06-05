@@ -137,7 +137,8 @@ module.exports = {
         heading: 'Explore The Data',
         paragraphs: [
           'Get started before the next challenge with our open datasets:',
-          'Spanning oncology, cardiovascular disease, autoimmune disorders, neurology, and many more, across 80+ countries.'
+          'Spanning oncology, cardiovascular disease, autoimmune disorders, neurology, and many more, across 80+ countries.',
+          'You can download these files from GitHub:'
         ],
         table: {
           headers: ['', 'Trials', 'Questions'],
@@ -146,7 +147,12 @@ module.exports = {
             ['**Winter 2025 Benchmark**', '314', '605'],
             ['**Summer 2025 Benchmark**', '240', '857']
           ]
-        }
+        },
+        items: [
+          '[train data](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/tree/main/datasets)',
+          '[Winter_2025.pickle](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/blob/main/datasets/Winter_2025.pickle)',
+          '[Summer_2025.pickle](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/blob/main/datasets/Summer_2025.pickle)'
+        ]
       }
     ]
   },

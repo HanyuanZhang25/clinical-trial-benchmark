@@ -1,5 +1,4 @@
 const API_BASE = '/api'
-const VISION_VIDEO_URL = 'https://storage.googleapis.com/test-to-see-clinical-trial-data/ct-open-vision-video.mp4'
 
 async function request(endpoint, options = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -52,7 +51,6 @@ export const api = {
   getDownloadUrl: (id) => `${API_BASE}/benchmarks/${id}/download`,
   getAuxiliaryUrl: (id) => `${API_BASE}/benchmarks/${id}/auxiliary`,
   getHomeContent: () => request('/content/home'),
-  getVisionVideoUrl: () => VISION_VIDEO_URL,
 
   submit: (payload) => request('/submissions', {
     method: 'POST',

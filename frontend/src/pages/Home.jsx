@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
 
 const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
+const VISION_VIDEO_URL = 'https://youtu.be/VbEtRQVCb0Q?si=Wlycd3QBDHLfexH3'
 const CHALLENGE_WINDOW_LABELS = {
   '26-06': 'June-August 2026',
   '26-09': 'September-December 2026',
@@ -382,15 +383,14 @@ function Home({ user }) {
         <div className="section-header">
           <h2 id="vision-video-heading">CT Open Vision</h2>
         </div>
-        <video
-          className="vision-video"
-          controls
-          playsInline
-          preload="metadata"
-          src={api.getVisionVideoUrl()}
+        <a
+          className="btn btn-primary vision-video-link"
+          href={VISION_VIDEO_URL}
+          target="_blank"
+          rel="noreferrer"
         >
-          Your browser does not support the video tag.
-        </video>
+          Watch on YouTube
+        </a>
       </section>
 
       <section className="info-section">

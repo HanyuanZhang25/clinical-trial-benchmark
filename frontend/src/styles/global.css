@@ -205,9 +205,20 @@ select {
 }
 
 .benchmark-section,
+.vision-video-section,
 .info-section {
   display: grid;
   gap: 18px;
+}
+
+.vision-video {
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  display: block;
+  background: #0b1320;
+  border: 1px solid rgba(19, 34, 56, 0.14);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
 }
 
 .benchmark-tabs {

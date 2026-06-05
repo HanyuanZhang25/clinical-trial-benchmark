@@ -378,6 +378,21 @@ function Home({ user }) {
         </div>
       </section>
 
+      <section className="vision-video-section" aria-labelledby="vision-video-heading">
+        <div className="section-header">
+          <h2 id="vision-video-heading">CT Open Vision</h2>
+        </div>
+        <video
+          className="vision-video"
+          controls
+          playsInline
+          preload="metadata"
+          src={api.getVisionVideoUrl()}
+        >
+          Your browser does not support the video tag.
+        </video>
+      </section>
+
       <section className="info-section">
         <div className="section-header">
           <h2>Schedule</h2>

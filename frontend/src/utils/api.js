@@ -51,6 +51,7 @@ export const api = {
   getDownloadUrl: (id) => `${API_BASE}/benchmarks/${id}/download`,
   getAuxiliaryUrl: (id) => `${API_BASE}/benchmarks/${id}/auxiliary`,
   getHomeContent: () => request('/content/home'),
+  getVisionVideoUrl: () => `${API_BASE}/content/vision-video`,
 
   submit: (payload) => request('/submissions', {
     method: 'POST',

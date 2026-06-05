@@ -54,23 +54,13 @@ async function readText(filePath) {
   return fs.readFileSync(resolveFilePath(filePath), 'utf8');
 }
 
-async function getFileSize(filePath) {
+function createReadStream(filePath) {
   if (isGcsPath(filePath)) {
     const { bucket, object } = parseGcsPath(filePath);
-    const [metadata] = await storage.bucket(bucket).file(object).getMetadata();
-    return Number(metadata.size);
+    return storage.bucket(bucket).file(object).createReadStream();
   }
 
-  return fs.statSync(resolveFilePath(filePath)).size;
+  return fs.createReadStream(resolveFilePath(filePath));
 }
 
-function createReadStream(filePath, options = {}) {
-  if (isGcsPath(filePath)) {
-    const { bucket, object } = parseGcsPath(filePath);
-    return storage.bucket(bucket).file(object).createReadStream(options);
-  }
-
-  return fs.createReadStream(resolveFilePath(filePath), options);
-}
-
-module.exports = { readJson, readText, createReadStream, getFileSize, isGcsPath, parseGcsPath };
+module.exports = { readJson, readText, createReadStream, isGcsPath, parseGcsPath };

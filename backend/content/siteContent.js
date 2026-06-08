@@ -160,7 +160,7 @@ module.exports = {
           'You can download these files from GitHub:'
         ],
         items: [
-          '[train data](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/tree/main/datasets)',
+          '[train_data](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/tree/main/datasets) (Since github not support the file that exceed 25MB, we divide it into 3 part, please merge them when you want to use it )',
           '[Winter_2025.pickle](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/blob/main/datasets/Winter_2025.pickle)',
           '[Summer_2025.pickle](https://github.com/ClinicalTrial-OpenChallenge/CT_Open/blob/main/datasets/Summer_2025.pickle)'
         ]

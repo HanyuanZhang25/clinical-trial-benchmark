@@ -211,15 +211,12 @@ select {
   gap: 18px;
 }
 
-.vision-video-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
-.vision-video-link {
-  justify-self: start;
+.vision-video-embed {
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(19, 34, 56, 0.14);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
 }
 
 .benchmark-tabs {

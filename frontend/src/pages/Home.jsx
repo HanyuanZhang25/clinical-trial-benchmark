@@ -4,7 +4,7 @@ import ContentSections from '../components/ContentSections'
 import { api } from '../utils/api'
 
 const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
-const VISION_VIDEO_URL = 'https://youtu.be/VbEtRQVCb0Q?si=Wlycd3QBDHLfexH3'
+const VISION_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/VbEtRQVCb0Q'
 const CHALLENGE_WINDOW_LABELS = {
   '26-06': 'June-August 2026',
   '26-09': 'September-December 2026',
@@ -381,17 +381,16 @@ function Home({ user }) {
       </section>
 
       <section className="vision-video-section" aria-labelledby="vision-video-heading">
-        <div className="section-header vision-video-header">
+        <div className="section-header">
           <h2 id="vision-video-heading">CT Open Vision</h2>
-          <a
-            className="btn btn-primary vision-video-link"
-            href={VISION_VIDEO_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Watch on YouTube
-          </a>
         </div>
+        <iframe
+          className="vision-video-embed"
+          src={VISION_VIDEO_EMBED_URL}
+          title="CT Open Vision"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
       </section>
 
       <section className="info-section">

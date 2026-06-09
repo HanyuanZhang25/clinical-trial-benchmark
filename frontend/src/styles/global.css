@@ -214,6 +214,7 @@ select {
 .vision-video-embed {
   width: min(960px, 100%);
   aspect-ratio: 16 / 9;
+  justify-self: center;
   border: 1px solid rgba(19, 34, 56, 0.14);
   border-radius: 8px;
   box-shadow: var(--shadow);

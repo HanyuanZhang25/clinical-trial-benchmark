@@ -175,6 +175,43 @@ select {
   line-height: 1.2;
 }
 
+.affiliation-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(19, 34, 56, 0.1);
+}
+
+.affiliation-label {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.affiliation-logos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.affiliation-logo {
+  display: block;
+  width: auto;
+  object-fit: contain;
+}
+
+.affiliation-logo-lei {
+  height: 32px;
+}
+
+.affiliation-logo-ucsd {
+  height: 42px;
+  max-width: min(260px, calc(100vw - 64px));
+}
+
 .status-card,
 .stat-card {
   background: white;

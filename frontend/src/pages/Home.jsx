@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ContentSections from '../components/ContentSections'
 import { api } from '../utils/api'
+import leiLogo from '../assets/lei-logo.png'
+import ucsdLogo from '../assets/ucsd-logo.png'
 
 const DISPLAY_TIME_ZONE = 'America/Los_Angeles'
 const VISION_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/VbEtRQVCb0Q'
@@ -377,6 +379,13 @@ function Home({ user }) {
               ))}
             </div>
           )}
+          <div className="affiliation-strip" aria-label="Project affiliations">
+            <span className="affiliation-label">Developed by</span>
+            <div className="affiliation-logos">
+              <img src={leiLogo} alt="LEI Lab" className="affiliation-logo affiliation-logo-lei" />
+              <img src={ucsdLogo} alt="UC San Diego" className="affiliation-logo affiliation-logo-ucsd" />
+            </div>
+          </div>
         </div>
       </section>
 

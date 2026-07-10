@@ -55,6 +55,8 @@ select {
 
 .page-shell {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: 24px;
 }
 
@@ -137,6 +139,13 @@ select {
   overflow: hidden;
 }
 
+.hero-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+}
+
 .hero-copy h1 {
   margin: 8px 0 12px;
   font-size: clamp(2.4rem, 4vw, 4.3rem);
@@ -175,41 +184,46 @@ select {
   line-height: 1.2;
 }
 
-.affiliation-strip {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(19, 34, 56, 0.1);
+.hero-affiliations {
+  min-width: 330px;
+  padding-left: 28px;
+  border-left: 1px solid rgba(19, 34, 56, 0.14);
 }
 
-.affiliation-label {
+.hero-affiliation-caption {
+  display: block;
+  margin-bottom: 12px;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
 }
 
-.affiliation-logos {
-  display: flex;
+.hero-affiliation-lockup {
+  display: grid;
+  grid-template-columns: auto 1px minmax(0, 210px);
   align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
-.affiliation-logo {
+.hero-affiliation-logo {
   display: block;
   width: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
-.affiliation-logo-lei {
-  height: 32px;
+.hero-affiliation-logo-lei {
+  height: 30px;
 }
 
-.affiliation-logo-ucsd {
-  height: 42px;
-  max-width: min(260px, calc(100vw - 64px));
+.hero-affiliation-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(19, 34, 56, 0.14);
+}
+
+.hero-affiliation-logo-ucsd {
+  width: 210px;
+  height: auto;
 }
 
 .status-card,
@@ -245,6 +259,8 @@ select {
 .vision-video-section,
 .info-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: 18px;
 }
 
@@ -832,6 +848,19 @@ tbody tr:hover {
 }
 
 @media (max-width: 900px) {
+  .hero-heading {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .hero-affiliations {
+    min-width: 0;
+    padding-top: 18px;
+    padding-left: 0;
+    border-top: 1px solid rgba(19, 34, 56, 0.12);
+    border-left: 0;
+  }
+
   .hero-panel,
   .intro-grid,
   .detail-grid,
@@ -851,7 +880,8 @@ tbody tr:hover {
   }
 
   .main-content {
-    width: min(100vw - 20px, 1240px);
+    width: min(calc(100vw - 20px), 1240px);
+    min-width: 0;
     padding-top: 20px;
   }
 }

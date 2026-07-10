@@ -353,40 +353,43 @@ function Home({ user }) {
   return (
     <div className="page-shell">
       <section className="hero-panel">
-        <div className="hero-copy">
-          <h1>CT Open Challenge</h1>
-          <p>
-            An Open-Access, Uncontaminated, Live Platform for the Open Challenge of Clinical Trial Outcome Prediction.
-          </p>
-          {content?.announcement?.items?.length > 0 && (
-            <div className="notice-board top-gap">
-              {content.announcement.items.map((item) => (
-                <div key={item.date} className="notice-line">
-                  <span className="notice-icon" aria-hidden="true">*</span>
-                  <div>
-                    <strong>New ({item.date}): </strong>
-                    {item.parts.map((part, index) =>
-                      part.type === 'link' ? (
-                        <a key={`${item.date}-${index}`} href={part.href}>
-                          {part.label}
-                        </a>
-                      ) : (
-                        <span key={`${item.date}-${index}`}>{part.value}</span>
-                      )
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="affiliation-strip" aria-label="Project affiliations">
-            <span className="affiliation-label">Developed by</span>
-            <div className="affiliation-logos">
-              <img src={leiLogo} alt="LEI Lab" className="affiliation-logo affiliation-logo-lei" />
-              <img src={ucsdLogo} alt="UC San Diego" className="affiliation-logo affiliation-logo-ucsd" />
+        <div className="hero-heading">
+          <div className="hero-copy">
+            <h1>CT Open Challenge</h1>
+            <p>
+              An Open-Access, Uncontaminated, Live Platform for the Open Challenge of Clinical Trial Outcome Prediction.
+            </p>
+          </div>
+          <div className="hero-affiliations" aria-label="Developed by LEI Lab at UC San Diego">
+            <span className="hero-affiliation-caption">Developed by</span>
+            <div className="hero-affiliation-lockup">
+              <img src={leiLogo} alt="LEI Lab" className="hero-affiliation-logo hero-affiliation-logo-lei" />
+              <span className="hero-affiliation-divider" aria-hidden="true" />
+              <img src={ucsdLogo} alt="UC San Diego" className="hero-affiliation-logo hero-affiliation-logo-ucsd" />
             </div>
           </div>
         </div>
+        {content?.announcement?.items?.length > 0 && (
+          <div className="notice-board top-gap">
+            {content.announcement.items.map((item) => (
+              <div key={item.date} className="notice-line">
+                <span className="notice-icon" aria-hidden="true">*</span>
+                <div>
+                  <strong>New ({item.date}): </strong>
+                  {item.parts.map((part, index) =>
+                    part.type === 'link' ? (
+                      <a key={`${item.date}-${index}`} href={part.href}>
+                        {part.label}
+                      </a>
+                    ) : (
+                      <span key={`${item.date}-${index}`}>{part.value}</span>
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="vision-video-section" aria-labelledby="vision-video-heading">

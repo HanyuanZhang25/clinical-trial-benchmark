@@ -374,7 +374,16 @@ function Home({ user }) {
                 <img src={leiLogo} alt="LEI Lab" className="hero-affiliation-logo hero-affiliation-logo-lei" />
               </a>
               <span className="hero-affiliation-divider" aria-hidden="true" />
-              <img src={ucsdLogo} alt="UC San Diego" className="hero-affiliation-logo hero-affiliation-logo-ucsd" />
+              <a
+                className="hero-affiliation-link"
+                href="https://lei.ucsd.edu/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit the LEI Lab website"
+                title="Visit the LEI Lab website"
+              >
+                <img src={ucsdLogo} alt="UC San Diego" className="hero-affiliation-logo hero-affiliation-logo-ucsd" />
+              </a>
             </div>
           </div>
         </div>

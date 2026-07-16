@@ -211,6 +211,25 @@ select {
   object-fit: contain;
 }
 
+.hero-affiliation-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  margin: -4px;
+  border-radius: 4px;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.hero-affiliation-link:hover {
+  opacity: 0.76;
+  transform: translateY(-1px);
+}
+
+.hero-affiliation-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
 .hero-affiliation-logo-lei {
   height: 30px;
 }

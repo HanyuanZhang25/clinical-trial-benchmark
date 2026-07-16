@@ -363,7 +363,16 @@ function Home({ user }) {
           <div className="hero-affiliations" aria-label="Developed by LEI Lab at UC San Diego">
             <span className="hero-affiliation-caption">Developed by</span>
             <div className="hero-affiliation-lockup">
-              <img src={leiLogo} alt="LEI Lab" className="hero-affiliation-logo hero-affiliation-logo-lei" />
+              <a
+                className="hero-affiliation-link"
+                href="https://lei.ucsd.edu/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit the LEI Lab website"
+                title="Visit the LEI Lab website"
+              >
+                <img src={leiLogo} alt="LEI Lab" className="hero-affiliation-logo hero-affiliation-logo-lei" />
+              </a>
               <span className="hero-affiliation-divider" aria-hidden="true" />
               <img src={ucsdLogo} alt="UC San Diego" className="hero-affiliation-logo hero-affiliation-logo-ucsd" />
             </div>

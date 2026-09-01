@@ -76,6 +76,8 @@ function getScheduleStatusLabel(state) {
       return 'Upcoming'
     case 'closed_pending_results':
       return 'Closed Pending Results'
+    case 'awaiting_data_update':
+      return 'Awaiting Data Update'
     case 'results_published':
       return 'Results Published'
     case 'archived':
@@ -89,6 +91,7 @@ function getBenchmarkTabStatusLabel(benchmark) {
   if (benchmark.is_result_published) return 'Leaderboard'
   if (benchmark.is_submission_open) return 'Accepting Submission'
   if (benchmark.state === 'closed_pending_results') return 'Closed Pending Results'
+  if (benchmark.state === 'awaiting_data_update') return 'Awaiting Data Update'
 
   return ''
 }

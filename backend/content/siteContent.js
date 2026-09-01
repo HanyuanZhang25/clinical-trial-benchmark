@@ -12,11 +12,9 @@ module.exports = {
         ]
       },
       {
-        date: 'March 31',
+        date: 'August 31',
         parts: [
-          { type: 'text', value: 'The ' },
-          { type: 'link', label: 'Summer Open 2026', href: '#' },
-          { type: 'text', value: ' benchmark is now live and accepting submissions.' }
+          { type: 'text', value: 'Summer 2026 Open has closed submissions and is currently under evaluation.' }
         ]
       }
     ]

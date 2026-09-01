@@ -430,7 +430,7 @@ const benchmarkSeeds = [
     benchmark_cycle_label: '26/06',
     state: 'open_for_submission',
     submission_open_at: '2026-01-01T00:00:00Z',
-    submission_close_at: '2026-05-31T23:59:59Z',
+    submission_close_at: '2026-06-01T06:59:59Z',
     result_publish_at: '2026-09-07T00:00:00Z',
     download_file_path: benchmarkAssetPath('download_26_06.json', { useGcsInProduction: true }),
     manifest_file_path: benchmarkAssetPath('manifest_26_06.json', { useGcsInProduction: true }),
@@ -441,7 +441,7 @@ const benchmarkSeeds = [
     slug: '26-09',
     display_name: 'Fall 2026 Open',
     benchmark_cycle_label: '26/09',
-    state: 'open_for_submission',
+    state: 'awaiting_data_update',
     submission_open_at: '2026-06-01T07:00:00Z',
     submission_close_at: '2026-09-01T06:59:59Z',
     result_publish_at: '2027-01-07T08:00:00Z',
@@ -806,6 +806,48 @@ async function seedBenchmarks() {
   }
 }
 
+async function migrateSummer2026Announcement() {
+  const row = await rawGet('SELECT json_value FROM site_content WHERE content_key = ?', ['home_announcement']);
+  if (!row?.json_value) return;
+
+  try {
+    const announcement = JSON.parse(row.json_value);
+    let changed = false;
+
+    announcement.items = (announcement.items || []).map((item) => {
+      const text = (item.parts || [])
+        .map((part) => part.type === 'link' ? part.label : part.value)
+        .join('');
+
+      const isSummer2026ClosureNotice =
+        text.includes('Summer Open 2026') &&
+        text.includes('accepting submission');
+
+      if (!isSummer2026ClosureNotice) return item;
+
+      changed = true;
+      return {
+        date: 'August 31',
+        parts: [
+          {
+            type: 'text',
+            value: 'Summer 2026 Open has closed submissions and is currently under evaluation.'
+          }
+        ]
+      };
+    });
+
+    if (changed) {
+      await rawRun(
+        'UPDATE site_content SET json_value = ?, updated_at = CURRENT_TIMESTAMP WHERE content_key = ?',
+        [JSON.stringify(announcement), 'home_announcement']
+      );
+    }
+  } catch (error) {
+    console.warn(`[database] Summer 2026 announcement migration skipped: ${error.message}`);
+  }
+}
+
 async function seedEvaluations() {
   const historicalSeedSlugs = ['25-02', '25-09'];
   for (const slug of historicalSeedSlugs) {
@@ -901,6 +943,7 @@ async function init() {
     }
 
     await seedBenchmarks();
+    await migrateSummer2026Announcement();
     await seedEvaluations();
   })();
 

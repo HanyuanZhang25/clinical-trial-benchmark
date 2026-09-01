@@ -9,6 +9,9 @@ function deriveState(benchmark) {
   const publishAt = benchmark.result_publish_at ? Date.parse(benchmark.result_publish_at) : null;
 
   if (benchmark.state === 'archived') return 'archived';
+  if (benchmark.state === 'awaiting_data_update' && closeAt && now > closeAt) {
+    return 'awaiting_data_update';
+  }
   if (publishAt && now >= publishAt) return 'results_published';
   if (closeAt && now > closeAt) return 'closed_pending_results';
   if (openAt && closeAt && now >= openAt && now <= closeAt) return 'open_for_submission';

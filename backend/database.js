@@ -426,11 +426,11 @@ const benchmarkSeeds = [
   },
   {
     slug: '26-06',
-    display_name: 'Summer 2026 Open',
+    display_name: 'Summer 2026',
     benchmark_cycle_label: '26/06',
     state: 'open_for_submission',
-    submission_open_at: '2026-06-01T07:00:00Z',
-    submission_close_at: '2026-09-01T06:59:59Z',
+    submission_open_at: '2026-01-01T00:00:00Z',
+    submission_close_at: '2026-06-01T06:59:59Z',
     result_publish_at: '2026-09-07T00:00:00Z',
     download_file_path: benchmarkAssetPath('download_26_06.json', { useGcsInProduction: true }),
     manifest_file_path: benchmarkAssetPath('manifest_26_06.json', { useGcsInProduction: true }),
@@ -439,11 +439,11 @@ const benchmarkSeeds = [
   },
   {
     slug: '26-09',
-    display_name: 'Fall 2026 Open',
+    display_name: 'Fall 2026',
     benchmark_cycle_label: '26/09',
-    state: 'awaiting_data_update',
-    submission_open_at: '2026-09-01T07:00:00Z',
-    submission_close_at: '2027-01-01T07:59:59Z',
+    state: 'closed_pending_results',
+    submission_open_at: '2026-06-01T07:00:00Z',
+    submission_close_at: '2026-09-01T06:59:59Z',
     result_publish_at: '2027-01-07T08:00:00Z',
     download_file_path: benchmarkAssetPath('download_26_09.json', { useGcsInProduction: true }),
     manifest_file_path: benchmarkAssetPath('manifest_26_09.json', { useGcsInProduction: true }),
@@ -823,18 +823,26 @@ async function migrateSummer2026Announcement() {
         text.includes('Summer Open 2026') &&
         text.includes('accepting submission');
 
-      if (!isSummer2026ClosureNotice) return item;
+      if (isSummer2026ClosureNotice) {
+        changed = true;
+        return {
+          date: 'August 31',
+          parts: [
+            {
+              type: 'text',
+              value: 'Summer 2026 has closed submissions and is currently under evaluation.'
+            }
+          ]
+        };
+      }
 
-      changed = true;
-      return {
-        date: 'August 31',
-        parts: [
-          {
-            type: 'text',
-            value: 'Summer 2026 Open has closed submissions and is currently under evaluation.'
-          }
-        ]
-      };
+      const parts = (item.parts || []).map((part) => {
+        if (typeof part.value !== 'string' || !part.value.includes('Summer 2026 Open')) return part;
+        changed = true;
+        return { ...part, value: part.value.replaceAll('Summer 2026 Open', 'Summer 2026') };
+      });
+
+      return { ...item, parts };
     });
 
     if (changed) {

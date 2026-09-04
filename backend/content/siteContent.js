@@ -14,7 +14,7 @@ module.exports = {
       {
         date: 'August 31',
         parts: [
-          { type: 'text', value: 'Summer 2026 Open has closed submissions and is currently under evaluation.' }
+          { type: 'text', value: 'Summer 2026 has closed submissions and is currently under evaluation.' }
         ]
       }
     ]
